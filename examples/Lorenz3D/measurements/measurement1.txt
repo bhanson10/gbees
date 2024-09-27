@@ -1,0 +1,8 @@
+z (LU)
+-8
+
+Covariance(z)
+1
+
+T (TU)
+1
