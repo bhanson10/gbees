@@ -1,4 +1,4 @@
-// gbees-hash.h
+// gbees-hash.h, https://github.com/bhanson10/gbees-hash
 // Copyright 2024 by Benjamin Hanson, published under BSD 3-Clause License.
 
 #ifndef GBEES_HASH_H
@@ -128,13 +128,11 @@ void divide_sum(HashTable* P, double prob_sum, Grid* G);
 
 void normalize_tree(HashTable* P, Grid* G);
 
-char* concat_p(const char* str1, const char* str2, int num1, const char* str3, int num2);
+char* concat_file(const char* str1, const char* str2, int num1, const char* str3, int num2);
 
-char* concat_c(const char* str1, const char* str2, int num1);
+void write_cells(FILE* myfile, HashTable* P, Grid G);
 
-void write_file(FILE* myfile, HashTable* P, Grid G);
-
-void record_data(HashTable* P, const char* FILE_NAME, Grid G, const double t);
+void record_pdf(HashTable* P, const char* FILE_NAME, Grid G, const double t);
 
 void create_neighbors(HashTable* P, Grid G, Traj T, bool BOUNDS, double (*BOUND_f)(double*, double*));
 

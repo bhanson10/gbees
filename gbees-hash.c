@@ -1,4 +1,4 @@
-// gbees-hash.c
+// gbees-hash.c, https://github.com/bhanson10/gbees-hash
 // Copyright 2024 by Benjamin Hanson, published under BSD 3-Clause License.
 
 #include <stdlib.h>
@@ -10,8 +10,8 @@
 #include "gbees-hash.h"
 
 #define TOL 1E-8
-#define FNV_OFFSET 14695981039346656037UL
-#define FNV_PRIME 1099511628211UL
+#define FNV_OFFSET 14695981039346656037ULL
+#define FNV_PRIME 1099511628211ULL
 
 void exit_nomem(const char* error_string) {
     fprintf(stderr, "Error: memory allocation during %s.\n", error_string);
@@ -248,6 +248,159 @@ uint64_t FNV1a(int* state, int dim) {
     return hash;
 }
 
+#define ROTATE(x, k) (((x) << (k)) | ((x) >> (64 - (k))))
+
+// Mix function as defined in Bob Jenkins' lookup3 hash
+#define MIX(a, b, c) \
+{ \
+  a -= c;  a ^= ROTATE(c, 43);  c += b; \
+  b -= a;  b ^= ROTATE(a, 39);  a += c; \
+  c -= b;  c ^= ROTATE(b, 29);  b += a; \
+  a -= c;  a ^= ROTATE(c, 34);  c += b; \
+  b -= a;  b ^= ROTATE(a, 28);  a += c; \
+  c -= b;  c ^= ROTATE(b, 20);  b += a; \
+}
+
+// Final mix to ensure all bits are affected
+#define FINAL(a, b, c) \
+{ \
+  c ^= b; c -= ROTATE(b, 14); \
+  a ^= c; a -= ROTATE(c, 11); \
+  b ^= a; b -= ROTATE(a, 25); \
+  c ^= b; c -= ROTATE(b, 16); \
+  a ^= c; a -= ROTATE(c, 4);  \
+  b ^= a; b -= ROTATE(a, 14); \
+  c ^= b; c -= ROTATE(b, 24); \
+}
+
+uint64_t lookup3(const int *state, size_t dim) {
+    uint64_t a, b, c;
+    a = b = c = 0xdeadbeefdeadbeefLL + (dim << 3);
+
+    while (dim > 2) {
+        a += (uint64_t)state[0];
+        b += (uint64_t)state[1];
+        c += (uint64_t)state[2];
+        MIX(a, b, c);
+        state += 3;  // Move to the next 3 integers
+        dim -= 3;
+    }
+
+    // Handle the remaining elements
+    switch (dim) {
+        case 2:
+            b += (uint64_t)state[1];
+            a += (uint64_t)state[0];
+            break;
+        case 1:
+            a += (uint64_t)state[0];
+            break;
+        case 0:  // Nothing to add
+            break;
+    }
+    
+    FINAL(a, b, c);
+    return c;  // Return the final hash value
+}
+
+#define get16bits(d) ((uint32_t)((d) & 0xFFFF))
+
+uint32_t SuperFastHash(const int *state, int dim) {
+    uint32_t hash = (uint32_t)dim, tmp;
+    int rem;
+
+    if (dim <= 0 || state == NULL) return 0;
+
+    rem = dim & 1;  // Check remainder to see if there is one 32-bit int left
+    dim >>= 1;      // Each loop step processes 2 * 16-bit units (one 32-bit integer)
+
+    /* Main loop */
+    for (; dim > 0; dim--) {
+        hash  += get16bits(state[0]);   // Lower 16 bits of first 32-bit integer
+        tmp    = (get16bits(state[0] >> 16) << 11) ^ hash;  // Upper 16 bits shifted and XORed
+        hash   = (hash << 16) ^ tmp;
+        state++;  // Move to the next 32-bit integer
+        hash  += hash >> 11;
+    }
+
+    /* Handle end cases */
+    if (rem) {  // If there's one 32-bit integer left to process
+        hash += get16bits(state[0]);
+        hash ^= hash << 16;
+        hash ^= (int8_t)(state[0] >> 16) << 18;  // Process the higher 16 bits
+        hash += hash >> 11;
+    }
+
+    /* Force "avalanching" of final 127 bits */
+    hash ^= hash << 3;
+    hash += hash >> 5;
+    hash ^= hash << 4;
+    hash += hash >> 17;
+    hash ^= hash << 25;
+    hash += hash >> 6;
+
+    return hash;
+}
+
+uint64_t DJBX33A(const int *state, int dim) {
+    uint64_t hash = 5381;  // Initial value for the DJBX33A hash function
+
+    for (int i = 0; i < dim; ++i) {
+        // Process the 32-bit integer as 4 separate bytes
+        hash = ((hash << 5) + hash) + (state[i] & 0xFF);         // Add the lowest byte
+        hash = ((hash << 5) + hash) + ((state[i] >> 8) & 0xFF);  // Add the next byte
+        hash = ((hash << 5) + hash) + ((state[i] >> 16) & 0xFF); // Add the next byte
+        hash = ((hash << 5) + hash) + ((state[i] >> 24) & 0xFF); // Add the highest byte
+    }
+
+    return hash;  // Return the 64-bit hash value
+}
+
+uint64_t MurmurHash(const int *state, int dim) {
+    const uint64_t seed = 0;  // Initial seed value
+    const uint64_t m = 0xc6a4a7935bd19ea9ULL;
+    const int r = 47;
+
+    uint64_t hash = seed ^ (dim * m);  // Seed hash with the dimension
+
+    for (int i = 0; i < dim; ++i) {
+        uint64_t k = (uint64_t)state[i];  // Convert int to uint64_t for processing
+
+        // Mix the bits of the key
+        k *= m;
+        k ^= k >> r;
+        k *= m;
+
+        // Combine the hash with the mixed key
+        hash ^= k;
+        hash *= m;  // Multiply by the constant
+    }
+
+    // Finalization
+    hash ^= hash >> r;
+    hash *= m;
+    hash ^= hash >> r;
+
+    return hash;  // Return the 64-bit hash value
+}
+
+uint64_t BuzHash(const int *state, int dim) {
+    uint64_t hash = 0;  // Initialize the hash value
+    uint64_t prime = 0x5bd1e995;  // A prime number used in the hash function
+
+    for (int i = 0; i < dim; ++i) {
+        hash ^= (uint64_t)state[i];      // Combine the current integer with the hash
+        hash *= prime;                   // Multiply by a prime number
+        hash ^= hash >> 47;              // Mix the bits
+    }
+
+    // Finalization step
+    hash *= prime;                       // Final multiplication
+    hash ^= hash >> 47;                  // Final mixing step
+
+    return hash;  // Return the 64-bit hash value
+}
+
 bool same_state(int* state1, int* state2, int dim){
     for(int i = 0; i < dim; i++){
         if(state1[i] != state2[i]){
@@ -340,6 +493,11 @@ double gauss_probability(int dim, double* x, Meas M){ // MC Calculate gaussian p
 ==============================================================================*/
 void HashTableEntry_insert(HashTable* P, int* state, double prob, int dim, double J) {
     uint64_t hash = FNV1a(state, dim);
+    // uint64_t hash = lookup3(state, dim);
+    // uint64_t hash = SuperFastHash(state, dim);
+    // uint64_t hash = DJBX33A(state, dim);
+    // uint64_t hash = MurmurHash(state, dim);
+    // uint64_t hash = BuzHash(state, dim);
     size_t index = (size_t)(hash & (uint64_t)(P->capacity - 1));
     HashTableEntry* current = P->entries[index]; 
 
@@ -376,6 +534,11 @@ void HashTable_insert(HashTable* P, Grid* G, Traj T, int* state, double prob, bo
 
 HashTableEntry* HashTable_search(HashTable* P, int* state, int dim) {
     uint64_t hash = FNV1a(state, dim);
+    // uint64_t hash = lookup3(state, dim);
+    // uint64_t hash = SuperFastHash(state, dim);
+    // uint64_t hash = DJBX33A(state, dim);
+    // uint64_t hash = MurmurHash(state, dim);
+    // uint64_t hash = BuzHash(state, dim);
     size_t index = (size_t)(hash & (uint64_t)(P->capacity - 1));
 
     HashTableEntry* entry = P->entries[index]; 
@@ -390,6 +553,11 @@ HashTableEntry* HashTable_search(HashTable* P, int* state, int dim) {
 
 void HashTable_delete(HashTable* P, int* state, int dim){
     uint64_t hash = FNV1a(state, dim);
+    // uint64_t hash = lookup3(state, dim);
+    // uint64_t hash = SuperFastHash(state, dim);
+    // uint64_t hash = DJBX33A(state, dim);
+    // uint64_t hash = MurmurHash(state, dim);
+    // uint64_t hash = BuzHash(state, dim);
     size_t index = (size_t)(hash & (uint64_t)(P->capacity - 1));
 
     HashTableEntry* current = P->entries[index]; 
@@ -572,14 +740,14 @@ void normalize_tree(HashTable* P, Grid* G){
     return; 
 }
 
-char* concat_p(const char* str1, const char* str2, int num1, const char* str3, int num2) {
+char* concat_file(const char* str1, const char* str2, int num1, const char* str3, int num2) {
     int num1_len = snprintf(NULL, 0, "%d", num1);
     int num2_len = snprintf(NULL, 0, "%d", num2);
     char* str4 = ".txt"; 
     size_t total_len = strlen(str1) + strlen(str2) + num1_len + strlen(str3) + num2_len + strlen(str4) + 1; 
     char* result = (char*)malloc(total_len * sizeof(char));
     if (result == NULL) {
-        perror("Error: memory allocation failure during concat_p");
+        perror("Error: memory allocation failure during concat_file");
         exit(EXIT_FAILURE);
     }
     strcpy(result, str1);
@@ -596,26 +764,7 @@ char* concat_p(const char* str1, const char* str2, int num1, const char* str3, i
     return result;
 }
 
-char* concat_c(const char* str1, const char* str2, int num1) {
-    int num1_len = snprintf(NULL, 0, "%d", num1);
-    char* str3 = ".txt"; 
-    size_t total_len = strlen(str1) + strlen(str2) + num1_len + strlen(str3) + 1; 
-    char* result = (char*)malloc(total_len * sizeof(char));
-    if (result == NULL) {
-        perror("Error: memory allocation failure during concat_p");
-        exit(EXIT_FAILURE);
-    }
-    strcpy(result, str1);
-    strcat(result, str2);
-    char num1_str[num1_len + 1];
-    sprintf(num1_str, "%d", num1);
-    strcat(result, num1_str);
-    strcat(result, str3);
-
-    return result;
-}
-
-void write_file(FILE* myfile, HashTable* P, Grid G){
+void write_cells(FILE* myfile, HashTable* P, Grid G){
     for(int idx = 0; idx < P->capacity; idx++){
         HashTableEntry* head = P->entries[idx];
         if(head != NULL){
@@ -635,14 +784,14 @@ void write_file(FILE* myfile, HashTable* P, Grid G){
     return;
 }
 
-void record_data(HashTable* P, const char* FILE_NAME, Grid G, const double t){
+void record_pdf(HashTable* P, const char* FILE_NAME, Grid G, const double t){
     FILE* file = fopen(FILE_NAME, "w");
     if (file == NULL) {
         fprintf(stderr, "Error: could not open file %s", FILE_NAME);
         exit(EXIT_FAILURE);
     }
     fprintf(file, "%lf\n", t);
-    write_file(file, P, G);
+    write_cells(file, P, G);
     fclose(file);
     return; 
 }
@@ -1090,9 +1239,9 @@ void record_collisions(HashTable* P, const char* FILE_NAME){
         exit(EXIT_FAILURE);
     }
 
-    int entry_count = 0; 
     for(int idx = 0; idx < P->capacity; idx++){
         HashTableEntry* head = P->entries[idx];
+        int entry_count = 0; 
         if(head != NULL){
             HashTableEntry* last = head;
             while(last != NULL){
@@ -1101,14 +1250,14 @@ void record_collisions(HashTable* P, const char* FILE_NAME){
             }
         }
         fprintf(myfile, "%d\n", entry_count);
-        entry_count = 0; 
     }
-    return;
 
+    fclose(myfile);
+    return;
 }
 
 void run_gbees(void (*f)(double*, double*, double*, double*), void (*h)(double*, double*, double*, double*), double (*BOUND_f)(double*, double*), Grid G, Meas M, Traj T, char* P_DIR, char* M_DIR, int NUM_DIST, int NUM_MEAS, int DEL_STEP, int OUTPUT_FREQ, int CAPACITY, int DIM_h, bool OUTPUT, bool RECORD, bool MEASURE, bool BOUNDS, bool COLLISIONS){
-    char* P_PATH; 
+    char* P_PATH; char* C_PATH; 
     double RECORD_TIME = M.T/(NUM_DIST-1);      
 
     HashTable* P = HashTable_create(CAPACITY); 
@@ -1126,7 +1275,8 @@ void run_gbees(void (*f)(double*, double*, double*, double*), void (*h)(double*,
     for(int nm = 0; nm < NUM_MEAS; nm++){
         printf("Timestep: %d-0, Program time: %f s, Sim. time: %f", nm, ((double)(clock()-start))/CLOCKS_PER_SEC, tt); 
         printf(" TU, Active/Total Cells: %zu/%zu\n", P->a_count, P->tot_count); 
-        if(RECORD){P_PATH = concat_p(P_DIR, "/P", nm, "/pdf_", 0); record_data(P, P_PATH, G, tt); free(P_PATH);};
+        if(RECORD){P_PATH = concat_file(P_DIR, "/P", nm, "/pdf_", 0); record_pdf(P, P_PATH, G, tt); free(P_PATH);};
+        if(COLLISIONS){C_PATH = concat_file(P_DIR, "/C", nm, "/c_", 0); record_collisions(P, C_PATH); free(C_PATH);}
 
         double mt = 0; int record_count = 1; int step_count = 1; double rt; 
         while(fabs(mt - M.T) > TOL) { // time between discrete measurements
@@ -1152,9 +1302,7 @@ void run_gbees(void (*f)(double*, double*, double*, double*), void (*h)(double*,
                     printf(" TU, Active/Total Cells: %zu/%zu\n", P->a_count, P->tot_count); 
                 }
 
-                if(COLLISIONS){
-                    char* C_PATH = concat_p(P_DIR, "/C", nm, "/c_", step_count - 1); record_collisions(P, C_PATH); free(C_PATH); 
-                }
+                if(COLLISIONS){C_PATH = concat_file(P_DIR, "/C", nm, "/c_", step_count); record_collisions(P, C_PATH); free(C_PATH);}
 
                 step_count += 1; G.dt = DBL_MAX;
             }
@@ -1165,11 +1313,18 @@ void run_gbees(void (*f)(double*, double*, double*, double*), void (*h)(double*,
             }
             
             if (RECORD) { // record PDF
-                P_PATH = concat_p(P_DIR, "/P", nm, "/pdf_", record_count); 
-                record_data(P, P_PATH, G, tt + mt + rt);
+                P_PATH = concat_file(P_DIR, "/P", nm, "/pdf_", record_count); 
+                record_pdf(P, P_PATH, G, tt + mt + rt);
                 record_count += 1;
                 free(P_PATH);
             }
+
+            // if (COLLISIONS) { // record collisions
+            //     C_PATH = concat_file(P_DIR, "/C", nm, "/c_", record_count); 
+            //     record_collisions(P, C_PATH);
+            //     record_count += 1;
+            //     free(C_PATH);
+            // }
 
             mt += rt;
         }
