@@ -1,4 +1,4 @@
-# makefile, https://github.com/bhanson10/gbees/tree/main/examples/PCR3BP
+# makefile, https://github.com/bhanson10/gbees-hash/tree/main/examples/PCR3BP
 # Copyright 2024 by Benjamin Hanson, published under BSD 3-Clause License.
 
 CC=gcc
@@ -27,10 +27,10 @@ python: folders_py
 	python3 -u ${TARGET}.py
 
 folders_c:
-	mkdir -p results/c/P0 results/c/P1 results/c/P2 results/c/P3
+	mkdir -p results/c/P0 results/c/P1 results/c/P2 results/c/P3 results/c/C0 results/c/C1 results/c/C2 results/c/C3
 
 folders_py:
-	mkdir -p results/python/P0 results/python/P1 results/python/P2 results/python/P3
+	mkdir -p results/python/P0 results/python/P1 results/python/P2 results/python/P3 results/python/C0 results/python/C1 results/python/C2 results/python/C3
 
 link: ${OBJS}
 	${CC} ${LDFLAGS} -o ${TARGET} ${OBJS} ${LDLIBS}

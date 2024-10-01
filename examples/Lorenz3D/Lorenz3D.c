@@ -1,4 +1,4 @@
-// Lorenz3D.c, https://github.com/bhanson10/gbees/tree/main/examples/Lorenz3D
+// Lorenz3D.c, https://github.com/bhanson10/gbees-hash/tree/main/examples/Lorenz3D
 // Copyright 2024 by Benjamin Hanson, published under BSD 3-Clause License.
 
 #include "../../gbees-hash.h" 
