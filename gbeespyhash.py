@@ -26,6 +26,7 @@ class Grid(ct.Structure):
     _fields_ = [
         ("dim", ct.c_int),
         ("thresh", ct.c_double),
+        ("t", ct.c_double),
         ("dt", ct.c_double),
         ("center", ct.POINTER(ct.c_double)),
         ("dx", ct.POINTER(ct.c_double)),
@@ -62,18 +63,18 @@ def run_gbees(f, h, BOUND_f, G, M, T, P_DIR, M_DIR, NUM_DIST, NUM_MEAS, DEL_STEP
     c_M_DIR = ct.create_string_buffer(c_M_DIR)
     c_M_DIR = ct.cast(c_M_DIR, ct.POINTER(ct.c_char))
 
-    SYS_CALLBACK_FUNC = ct.CFUNCTYPE(None, ct.POINTER(ct.c_double), ct.POINTER(ct.c_double), ct.POINTER(ct.c_double), ct.POINTER(ct.c_double))
+    SYS_CALLBACK_FUNC = ct.CFUNCTYPE(None, ct.POINTER(ct.c_double), ct.POINTER(ct.c_double), ct.c_double, ct.POINTER(ct.c_double), ct.POINTER(ct.c_double))
     BOUND_CALLBACK_FUNC = ct.CFUNCTYPE(ct.c_double, ct.POINTER(ct.c_double), ct.POINTER(ct.c_double))
 
     @SYS_CALLBACK_FUNC
-    def c_f(xk, x, dx, coef):
-        v = f(x, dx, coef)
+    def c_f(xk, x, t, dx, coef):
+        v = f(x, t, dx, coef)
         for i in range(len(v)):
             xk[i] = v[i]
 
     @SYS_CALLBACK_FUNC
-    def c_h(y, x, dx, coef):
-        v = h(x, dx, coef)
+    def c_h(y, x, t, dx, coef):
+        v = h(x, t, dx, coef)
         for i in range(len(v)):
             y[i] = v[i]
     

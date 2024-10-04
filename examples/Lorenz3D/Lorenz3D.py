@@ -9,14 +9,14 @@ DIM_f = 3 # State dimension
 DIM_h = 1 # Measurement dimension
 
 # This function defines the dynamics model - required
-def Lorenz3D(x, dx, coef):
+def Lorenz3D(x, t, dx, coef):
     f1 = coef[0]*(x[1] - (x[0] + (dx[0]/2.0)))
     f2 = -(x[1] + (dx[1]/2.0)) - x[0]*x[2]
     f3 = -coef[1]*(x[2] + (dx[2]/2.0)) + x[0]*x[1] - coef[1]*coef[2]
     return [f1, f2, f3]
 
 # This function defines the measurement model - required if MEASURE == True
-def z(x, dx, coef):
+def z(x, t, dx, coef):
     h1 = x[2]
     return [h1]
 

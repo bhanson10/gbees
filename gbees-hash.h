@@ -26,6 +26,7 @@ void Meas_free(Meas *M);
 typedef struct Grid {
     int dim; 
     double thresh;
+    double t; 
     double dt;
     double *center;
     double *dx;
@@ -112,13 +113,13 @@ int get_size(HashTable* P);
 /*==============================================================================
                         GBEES FUNCTION DEFINITIONS
 ==============================================================================*/
-void initialize_adv(void (*f)(double*, double*, double*, double*), HashTable* P, Grid* G, Traj T);
+void initialize_adv(void (*f)(double*, double*, double, double*, double*), HashTable* P, Grid* G, Traj T);
 
 void initialize_ik_nodes(HashTable* P, Grid* G);
 
 void recursive_loop(HashTable* P, Grid* G, Meas M, Traj T, int level, int* current_state, double* current_state_vec, bool BOUNDS, double (*BOUND_f)(double*, double*));
 
-void initialize_grid(void (*f)(double*, double*, double*, double*), HashTable* P, Grid* G, Meas M, Traj T, bool BOUNDS, double (*BOUND_f)(double*, double*));
+void initialize_grid(void (*f)(double*, double*, double, double*, double*), HashTable* P, Grid* G, Meas M, Traj T, bool BOUNDS, double (*BOUND_f)(double*, double*));
 
 void set_bounds(HashTable* P, Grid* G);
 
@@ -136,7 +137,7 @@ void record_pdf(HashTable* P, const char* FILE_NAME, Grid G, const double t);
 
 void create_neighbors(HashTable* P, Grid G, Traj T, bool BOUNDS, double (*BOUND_f)(double*, double*));
 
-void grow_tree(void (*f)(double*, double*, double*, double*), HashTable* P, Grid G, Traj T, bool BOUNDS, double (*BOUND_f)(double*, double*));
+void grow_tree(void (*f)(double*, double*, double, double*, double*), HashTable* P, Grid G, Traj T, bool BOUNDS, double (*BOUND_f)(double*, double*));
 
 void check_cfl_condition(HashTable* P, Grid* G);
 
@@ -162,10 +163,10 @@ void delete_cells(HashTable* P, Grid G, double* del_probs, int** del_states, int
 
 void prune_tree(HashTable* P, Grid G);
 
-void meas_up_recursive(void (*h)(double*, double*, double*, double*), HashTable* P, Grid G, Meas M, Traj T);
+void meas_up_recursive(void (*h)(double*, double*, double, double*, double*), HashTable* P, Grid G, Meas M, Traj T);
 
 void record_collisions(HashTable* P, const char* FILE_NAME); 
 
-void run_gbees(void (*f)(double*, double*, double*, double*), void (*h)(double*, double*, double*, double*), double (*BOUND_f)(double*, double*), Grid G, Meas M, Traj T, char* P_DIR, char* M_DIR, int NUM_DIST, int NUM_MEAS, int DEL_STEP, int OUTPUT_FREQ, int CAPACITY, int DIM_h, bool OUTPUT, bool RECORD, bool MEASURE, bool BOUNDS, bool COLLISIONS);
+void run_gbees(void (*f)(double*, double*, double, double*, double*), void (*h)(double*, double*, double, double*, double*), double (*BOUND_f)(double*, double*), Grid G, Meas M, Traj T, char* P_DIR, char* M_DIR, int NUM_DIST, int NUM_MEAS, int DEL_STEP, int OUTPUT_FREQ, int CAPACITY, int DIM_h, bool OUTPUT, bool RECORD, bool MEASURE, bool BOUNDS, bool COLLISIONS);
 
 #endif // GBEES_HASH_H

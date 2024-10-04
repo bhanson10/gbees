@@ -98,6 +98,7 @@ Grid Grid_create(int dim, double thresh, double *center, double *dx){
     Grid G; 
     G.dim = dim; 
     G.thresh = thresh; 
+    G.t = 0; 
     G.dt = DBL_MAX; 
     G.center = malloc(dim * sizeof(double));
     G.dx = malloc(dim * sizeof(double *));
@@ -601,7 +602,7 @@ int get_size(HashTable* P){
 /*==============================================================================
                         GBEES FUNCTION DEFINITIONS
 ==============================================================================*/
-void initialize_adv(void (*f)(double*, double*, double*, double*), HashTable* P, Grid* G, Traj T){
+void initialize_adv(void (*f)(double*, double*, double, double*, double*), HashTable* P, Grid* G, Traj T){
     for(int idx = 0; idx < P->capacity; idx++){
         HashTableEntry* head = P->entries[idx];
         if(head != NULL){
@@ -613,7 +614,7 @@ void initialize_adv(void (*f)(double*, double*, double*, double*), HashTable* P,
                         x[i] = G->dx[i]*last->state[i]+G->center[i];
                     }
                     double xk[G->dim];
-                    (*f)(xk, x, G->dx, T.coef); 
+                    (*f)(xk, x, G->t, G->dx, T.coef); 
 
                     double sum = 0;
                     for(int i = 0; i < G->dim; i++){
@@ -677,7 +678,7 @@ void recursive_loop(HashTable* P, Grid* G, Meas M, Traj T, int level, int* curre
     return; 
 }
 
-void initialize_grid(void (*f)(double*, double*, double*, double*), HashTable* P, Grid* G, Meas M, Traj T, bool BOUNDS, double (*BOUND_f)(double*, double*)){
+void initialize_grid(void (*f)(double*, double*, double, double*, double*), HashTable* P, Grid* G, Meas M, Traj T, bool BOUNDS, double (*BOUND_f)(double*, double*)){
     int current_state[G->dim]; double current_state_vec[G->dim];
     recursive_loop(P, G, M, T, 0, current_state, current_state_vec, BOUNDS, BOUND_f);
     initialize_adv(f, P, G, T);
@@ -900,7 +901,7 @@ void create_neighbors(HashTable* P, Grid G, Traj T, bool BOUNDS, double (*BOUND_
     return; 
 }
 
-void grow_tree(void (*f)(double*, double*, double*, double*), HashTable* P, Grid G, Traj T, bool BOUNDS, double (*BOUND_f)(double*, double*)){
+void grow_tree(void (*f)(double*, double*, double, double*, double*), HashTable* P, Grid G, Traj T, bool BOUNDS, double (*BOUND_f)(double*, double*)){
     create_neighbors(P, G, T, BOUNDS, BOUND_f);
     initialize_adv(f, P, &G, T);
     initialize_ik_nodes(P, &G);
@@ -970,7 +971,7 @@ void update_ctu(HashTable* P, Grid G){
                                 p_node = i_node->i_nodes[j];
 
                                 last->ctu[j] -= fmax(i_node->v[i], 0.0) * fmax(last->v[j], 0.0) * F;
-                                i_node->ctu[j]          -= fmin(i_node->v[i], 0.0) * fmax(i_node->v[j], 0.0) * F;
+                                i_node->ctu[j] -= fmin(i_node->v[i], 0.0) * fmax(i_node->v[j], 0.0) * F;
 
                                 if(j_node!=NULL){
                                     j_node->ctu[j] -= fmax(i_node->v[i], 0.0) * fmin(j_node->v[j], 0.0) * F;
@@ -1208,7 +1209,7 @@ void prune_tree(HashTable* P, Grid G){
     return; 
 }
 
-void meas_up_recursive(void (*h)(double*, double*, double*, double*), HashTable* P, Grid G, Meas M, Traj T){
+void meas_up_recursive(void (*h)(double*, double*, double, double*, double*), HashTable* P, Grid G, Meas M, Traj T){
     for(int idx = 0; idx < P->capacity; idx++){
         HashTableEntry* head = P->entries[idx];
         if(head != NULL){
@@ -1220,7 +1221,7 @@ void meas_up_recursive(void (*h)(double*, double*, double*, double*), HashTable*
                 }
 
                 double y[M.dim];
-                (*h)(y, x, G.dx, T.coef); 
+                (*h)(y, x, G.t, G.dx, T.coef); 
 
                 double prob = gauss_probability(M.dim, y, M);   
                 last->prob *= prob;
@@ -1256,7 +1257,7 @@ void record_collisions(HashTable* P, const char* FILE_NAME){
     return;
 }
 
-void run_gbees(void (*f)(double*, double*, double*, double*), void (*h)(double*, double*, double*, double*), double (*BOUND_f)(double*, double*), Grid G, Meas M, Traj T, char* P_DIR, char* M_DIR, int NUM_DIST, int NUM_MEAS, int DEL_STEP, int OUTPUT_FREQ, int CAPACITY, int DIM_h, bool OUTPUT, bool RECORD, bool MEASURE, bool BOUNDS, bool COLLISIONS){
+void run_gbees(void (*f)(double*, double*, double, double*, double*), void (*h)(double*, double*, double, double*, double*), double (*BOUND_f)(double*, double*), Grid G, Meas M, Traj T, char* P_DIR, char* M_DIR, int NUM_DIST, int NUM_MEAS, int DEL_STEP, int OUTPUT_FREQ, int CAPACITY, int DIM_h, bool OUTPUT, bool RECORD, bool MEASURE, bool BOUNDS, bool COLLISIONS){
     char* P_PATH; char* C_PATH; 
     double RECORD_TIME = M.T/(NUM_DIST-1);      
 
@@ -1287,7 +1288,7 @@ void run_gbees(void (*f)(double*, double*, double*, double*), void (*h)(double*,
                 grow_tree(f, P, G, T, BOUNDS, BOUND_f);
                 check_cfl_condition(P, &G); 
                 G.dt = fmin(G.dt, RECORD_TIME - rt);
-                rt += G.dt;
+                rt += G.dt; G.t += G.dt; 
                 godunov_method(P, G);
                 update_prob(P, G);
                 normalize_tree(P, &G); 

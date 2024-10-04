@@ -7,7 +7,7 @@ CAP = 2^10;
 NM = 2; 
 SYS = "Lorenz3D";
 LANG = "c"; 
-HASH = "XNOR";
+HASH = "BuzHash";
 
 n = sqrt(CAP); 
 figure(1); clf; hold on; axis("square"); 
@@ -36,12 +36,11 @@ for nm=0:NM-1
         drawnow; 
 
         frames(count) = getframe(gcf); 
-        count = count + 1; 
-        return
+        count = count + 1;
     end
 end
 
-% create_video(frames, "../../figures/" + SYS + "/" + SYS + "_" + HASH + "_collisions.mp4", 20);
+create_video(frames, "../../figures/" + SYS + "/" + SYS + "_" + HASH + "_collisions.mp4", 20);
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                                FUNCTIONS
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

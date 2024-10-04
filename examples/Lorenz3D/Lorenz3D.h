@@ -8,9 +8,9 @@
 #define DIM_h 1 // Measurement dimension
 
 // This function defines the dynamics model - required
-void Lorenz3D(double* f, double* x, double* dx, double* coef);
+void Lorenz3D(double* f, double* x, double t, double* dx, double* coef);
 
 // This function defines the measurement model - required if MEASURE == true
-void z(double* h, double* x, double* dx, double* coef);
+void z(double* h, double* x, double t, double* dx, double* coef);
 
 #endif
