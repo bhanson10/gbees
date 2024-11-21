@@ -9,12 +9,12 @@ DIM_f = 6 # State dimension
 
 # This function defines the dynamics model - required
 def Lorenz6D(x, t, dx, coef):
-    f0 = (x[1] - x[4]) * x[5] - x[0] + coef[0];
-    f1 = (x[2] - x[5]) * x[0] - x[1] + coef[0];
-    f2 = (x[3] - x[0]) * x[1] - x[2] + coef[0];
-    f3 = (x[4] - x[1]) * x[2] - x[3] + coef[0];
-    f4 = (x[5] - x[2]) * x[3] - x[4] + coef[0];
-    f5 = (x[0] - x[3]) * x[4] - x[5] + coef[0];
+    f0 = (x[1] - x[4]) * x[5] - x[0] + coef[0]
+    f1 = (x[2] - x[5]) * x[0] - x[1] + coef[0]
+    f2 = (x[3] - x[0]) * x[1] - x[2] + coef[0]
+    f3 = (x[4] - x[1]) * x[2] - x[3] + coef[0]
+    f4 = (x[5] - x[2]) * x[3] - x[4] + coef[0]
+    f5 = (x[0] - x[3]) * x[4] - x[5] + coef[0]
     return [f0, f1, f2, f3, f4, f5]
 
 #==================================== Read in initial discrete measurement ==================================#
