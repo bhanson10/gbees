@@ -31,7 +31,7 @@ int main(void){
     for(int i = 0; i < DIM_f; i ++){
         dx[i] = pow(M.cov[i][i],0.5)/2;
     }
-    Grid G = Grid_create(DIM_f, 8E-9, M.mean, dx); // Inputs: (dimension, probability threshold, center, grid width)       
+    Grid G = Grid_create(DIM_f, 1E-8, M.mean, dx); // Inputs: (dimension, probability threshold, center, grid width)       
 
     double coef[] = {4.0};                         // Lorenz6D trajectory attributes (sigma, beta, r)
     Traj T = Traj_create(1, coef);                 // Inputs: (# of coefficients, coefficients)
