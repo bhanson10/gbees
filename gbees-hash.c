@@ -493,12 +493,12 @@ double gauss_probability(int dim, double* x, Meas M){ // MC Calculate gaussian p
                     BINARY SEARCH TREE FUNCTION DEFINITIONS
 ==============================================================================*/
 void HashTableEntry_insert(HashTable* P, int* state, double prob, int dim, double J) {
-    uint64_t hash = FNV1a(state, dim);
+    // uint64_t hash = FNV1a(state, dim);
     // uint64_t hash = lookup3(state, dim);
     // uint64_t hash = SuperFastHash(state, dim);
     // uint64_t hash = DJBX33A(state, dim);
     // uint64_t hash = MurmurHash(state, dim);
-    // uint64_t hash = BuzHash(state, dim);
+    uint64_t hash = BuzHash(state, dim);
     size_t index = (size_t)(hash & (uint64_t)(P->capacity - 1));
     HashTableEntry* current = P->entries[index]; 
 
@@ -534,12 +534,12 @@ void HashTable_insert(HashTable* P, Grid* G, Traj T, int* state, double prob, bo
 }
 
 HashTableEntry* HashTable_search(HashTable* P, int* state, int dim) {
-    uint64_t hash = FNV1a(state, dim);
+    // uint64_t hash = FNV1a(state, dim);
     // uint64_t hash = lookup3(state, dim);
     // uint64_t hash = SuperFastHash(state, dim);
     // uint64_t hash = DJBX33A(state, dim);
     // uint64_t hash = MurmurHash(state, dim);
-    // uint64_t hash = BuzHash(state, dim);
+    uint64_t hash = BuzHash(state, dim);
     size_t index = (size_t)(hash & (uint64_t)(P->capacity - 1));
 
     HashTableEntry* entry = P->entries[index]; 
@@ -553,12 +553,12 @@ HashTableEntry* HashTable_search(HashTable* P, int* state, int dim) {
 }
 
 void HashTable_delete(HashTable* P, int* state, int dim){
-    uint64_t hash = FNV1a(state, dim);
+    // uint64_t hash = FNV1a(state, dim);
     // uint64_t hash = lookup3(state, dim);
     // uint64_t hash = SuperFastHash(state, dim);
     // uint64_t hash = DJBX33A(state, dim);
     // uint64_t hash = MurmurHash(state, dim);
-    // uint64_t hash = BuzHash(state, dim);
+    uint64_t hash = BuzHash(state, dim);
     size_t index = (size_t)(hash & (uint64_t)(P->capacity - 1));
 
     HashTableEntry* current = P->entries[index]; 
