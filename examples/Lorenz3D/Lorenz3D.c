@@ -38,7 +38,7 @@ int main(void){
     double coef[] = {4.0, 1.0, 48.0};              // Lorenz3D trajectory attributes (sigma, beta, r)
     Traj T = Traj_create(3, coef);                 // Inputs: (# of coefficients, coefficients)
 
-    int NUM_DIST = 5;                              // Number of distributions recorded per measurement
+    int NUM_DIST = 4;                              // Number of distributions recorded per measurement
     int NUM_MEAS = 2;                              // Number of measurements
     int DEL_STEP = 20;                             // Number of steps per deletion procedure
     int OUTPUT_FREQ = 20;                          // Number of steps per output to terminal
