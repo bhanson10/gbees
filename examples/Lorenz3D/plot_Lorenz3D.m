@@ -15,19 +15,20 @@ options = odeset('MaxStep', 1E-3, 'InitialStep', 1E-3, 'RelTol', 1e-6);
 [~, x] = ode87(@(t, x) Lorenz3D(t, x ,prop), [0 50], ic, options);
 
 nexttile(1); 
-plot3(x(:,1), x(:,2), x(:,3), 'g-','linewidth', .5, 'HandleVisibility', 'off');  
-drawnow;
-
-[~, x] = ode87(@(t, x) Lorenz3D(t, x, prop), [0 prop.T], ic, options);
-plot3(x(:,1),x(:,2),x(:,3),'k-','linewidth',2,'DisplayName','Nominal'); drawnow;
-
+plot3(x(:,1), x(:,2), x(:,3), 'g-','linewidth', .5, 'HandleVisibility', 'off'); 
 nexttile(2); 
-plot3(x(:,1),x(:,2),x(:,3),'k-','linewidth',2,'DisplayName','Nominal'); drawnow;
+plot3(x(:,1), x(:,2), x(:,3), 'g-','linewidth', .5, 'HandleVisibility', 'off'); 
+
+[t, x] = ode87(@(t, x) Lorenz3D(t, x, prop), [0 prop.T], ic, options);
+nexttile(1); 
+plot3(x(t < 1,1),x(t < 1,2),x(t < 1,3),'k-','linewidth',2,'DisplayName','Nominal'); drawnow;
+nexttile(2); 
+plot3(x(t > 1,1),x(t > 1,2),x(t > 1,3),'k-','linewidth',2,'DisplayName','Nominal'); drawnow;
 
 %% GBEES
 NM = 2; 
 p.color = "cyan"; p.alpha = [0.3, 0.5, 0.7]; 
-P_DIR = "./results/c";
+P_DIR = "./results/<language>";
 
 count = 1;
 for nm=0:NM-1
@@ -45,11 +46,22 @@ for nm=0:NM-1
         for j=1:n_gbees
             xest_gbees{count} = xest_gbees{count}+x_gbees(j,:).*P_gbees(j);
         end
-
-        nexttile(1); 
-        plot_nongaussian_surface(x_gbees,P_gbees,[normpdf(1)/normpdf(0), normpdf(2)/normpdf(0), normpdf(3)/normpdf(0)],p);
-        nexttile(2);  
-        plot_nongaussian_surface(x_gbees,P_gbees,normpdf(3)/normpdf(0), p);
+        
+        if nm == 0
+            nexttile(1); 
+            plot_nongaussian_surface(x_gbees,P_gbees,[normpdf(1)/normpdf(0), normpdf(2)/normpdf(0), normpdf(3)/normpdf(0)],p);
+            if i == num_files-1
+                nexttile(2); 
+                plot_nongaussian_surface(x_gbees,P_gbees,[normpdf(1)/normpdf(0), normpdf(2)/normpdf(0), normpdf(3)/normpdf(0)],p);
+            end
+        elseif nm == 1
+            nexttile(2);  
+            plot_nongaussian_surface(x_gbees,P_gbees,[normpdf(1)/normpdf(0), normpdf(2)/normpdf(0), normpdf(3)/normpdf(0)], p);
+            if i == 0
+                nexttile(1); 
+                plot_nongaussian_surface(x_gbees,P_gbees,[normpdf(1)/normpdf(0), normpdf(2)/normpdf(0), normpdf(3)/normpdf(0)],p);
+            end
+        end
         drawnow; 
         
         count = count + 1;
@@ -59,9 +71,9 @@ end
 
 clear L; clear LH; 
 LH(1) = fill(nan, nan, nan, 'FaceAlpha', 0.7, 'FaceColor', 'cyan', 'EdgeColor', 'none');
-L{1} = "$p_\mathbf{x}(\mathbf{x}', t_{0+})\,\,\,$";
+L{1} = "$p(\mathbf{x}, t = [0,1^{\pm}])\,\,\,$";
 LH(2) = fill(nan, nan, nan, 'FaceAlpha', 0.7, 'FaceColor', 'magenta', 'EdgeColor', 'none');
-L{2} = "$p_\mathbf{x}(\mathbf{x}', t_{1+})\,\,\,$";
+L{2} = "$p(\mathbf{x}, t = [1^{\pm},2])\,\,\,$";
 leg = legend(LH, L, 'Orientation', 'Horizontal', 'FontSize', 18, 'FontName', 'times', 'Interpreter', 'latex');
 leg.Layout.Tile = 'south';
 drawnow; 
@@ -79,10 +91,10 @@ function initialize_figures()
 
     nexttile(1); hold all; 
     view(-109,14); lighting phong; light('Position',[-1 0 0]); 
-    set(gca, 'FontName' , 'Times','FontSize',12);
-    xlabel("x", 'FontSize', 18, 'FontName', 'Times');
-    ylabel("y", 'FontSize', 18, 'FontName', 'Times');
-    zlabel("z", 'FontSize', 18, 'FontName', 'Times');
+    set(gca, 'FontName' , 'Times', 'FontSize', 14);
+    xlabel("$x_1$", 'FontSize', 18, 'FontName', 'Times', 'Interpreter', 'latex');
+    ylabel("$x_2$", 'FontSize', 18, 'FontName', 'Times', 'Interpreter', 'latex');
+    zlabel("$x_3$", 'FontSize', 18, 'FontName', 'Times', 'Interpreter', 'latex');
     set(get(gca,'ZLabel'), 'Rotation', 0);
     xlim([-20 20])
     xticks([-20 -10 0 10 20])
@@ -96,10 +108,10 @@ function initialize_figures()
     
     nexttile(2); hold all; 
     view(-109,14); lighting phong; light('Position',[-1 0 0]);
-    set(gca, 'FontName' , 'Times','FontSize',12);
-    xlabel("x", 'FontSize', 18, 'FontName', 'Times');
-    ylabel("y", 'FontSize', 18, 'FontName', 'Times');
-    zlabel("z", 'FontSize', 18, 'FontName', 'Times');
+    set(gca, 'FontName' , 'Times', 'FontSize', 14);
+    xlabel("$x_1$", 'FontSize', 18, 'FontName', 'Times', 'Interpreter', 'latex');
+    ylabel("$x_2$", 'FontSize', 18, 'FontName', 'Times', 'Interpreter', 'latex');
+    zlabel("$x_3$", 'FontSize', 18, 'FontName', 'Times', 'Interpreter', 'latex');
     set(get(gca,'ZLabel'), 'Rotation', 0);
     xlim([-20 20])
     xticks([-20 -10 0 10 20])
@@ -110,7 +122,6 @@ function initialize_figures()
     zlim([-30 30])
     zticks([-30 -20 -10 0 10 20 30])
     zticklabels({'-30','-20','-10','0','10', '20', '30'})
-    set(gca, 'FontName' , 'Times');
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function [x, P, n, t] = parse_nongaussian_txt(filename)
