@@ -602,13 +602,13 @@ int get_size(HashTable* P){
 /*==============================================================================
                         GBEES FUNCTION DEFINITIONS
 ==============================================================================*/
-void initialize_adv(void (*f)(double*, double*, double, double*, double*), HashTable* P, Grid* G, Traj T){
+void initialize_adv(void (*f)(double*, double*, double, double*, double*), HashTable* P, Grid* G, Traj T, bool TV){
     for(int idx = 0; idx < P->capacity; idx++){
         HashTableEntry* head = P->entries[idx];
         if(head != NULL){
             HashTableEntry* last = head;
             while(last != NULL){
-                if(last->new_f == 0){
+                if((last->new_f == 0)||(TV == true)){
                     double x[G->dim];
                     for(int i = 0; i < G->dim; i++){
                         x[i] = G->dx[i]*last->state[i]+G->center[i];
@@ -678,10 +678,10 @@ void recursive_loop(HashTable* P, Grid* G, Meas M, Traj T, int level, int* curre
     return; 
 }
 
-void initialize_grid(void (*f)(double*, double*, double, double*, double*), HashTable* P, Grid* G, Meas M, Traj T, bool BOUNDS, double (*BOUND_f)(double*, double*)){
+void initialize_grid(void (*f)(double*, double*, double, double*, double*), HashTable* P, Grid* G, Meas M, Traj T, bool TV, bool BOUNDS, double (*BOUND_f)(double*, double*)){
     int current_state[G->dim]; double current_state_vec[G->dim];
     recursive_loop(P, G, M, T, 0, current_state, current_state_vec, BOUNDS, BOUND_f);
-    initialize_adv(f, P, G, T);
+    initialize_adv(f, P, G, T, TV);
     initialize_ik_nodes(P, G);
     return; 
 }
@@ -901,9 +901,9 @@ void create_neighbors(HashTable* P, Grid G, Traj T, bool BOUNDS, double (*BOUND_
     return; 
 }
 
-void grow_tree(void (*f)(double*, double*, double, double*, double*), HashTable* P, Grid G, Traj T, bool BOUNDS, double (*BOUND_f)(double*, double*)){
+void grow_tree(void (*f)(double*, double*, double, double*, double*), HashTable* P, Grid G, Traj T, bool TV, bool BOUNDS, double (*BOUND_f)(double*, double*)){
     create_neighbors(P, G, T, BOUNDS, BOUND_f);
-    initialize_adv(f, P, &G, T);
+    initialize_adv(f, P, &G, T, TV);
     initialize_ik_nodes(P, &G);
     return; 
 }
@@ -1257,7 +1257,7 @@ void record_collisions(HashTable* P, const char* FILE_NAME){
     return;
 }
 
-void run_gbees(void (*f)(double*, double*, double, double*, double*), void (*h)(double*, double*, double, double*, double*), double (*BOUND_f)(double*, double*), Grid G, Meas M, Traj T, char* P_DIR, char* M_DIR, int NUM_DIST, int NUM_MEAS, int DEL_STEP, int OUTPUT_FREQ, int CAPACITY, int DIM_h, bool OUTPUT, bool RECORD, bool MEASURE, bool BOUNDS, bool COLLISIONS){
+void run_gbees(void (*f)(double*, double*, double, double*, double*), void (*h)(double*, double*, double, double*, double*), double (*BOUND_f)(double*, double*), Grid G, Meas M, Traj T, char* P_DIR, char* M_DIR, int NUM_DIST, int NUM_MEAS, int DEL_STEP, int OUTPUT_FREQ, int CAPACITY, int DIM_h, bool OUTPUT, bool RECORD, bool MEASURE, bool BOUNDS, bool COLLISIONS, bool TV){
     char* P_PATH; char* C_PATH; 
     double RECORD_TIME = M.T/(NUM_DIST-1);      
 
@@ -1265,7 +1265,7 @@ void run_gbees(void (*f)(double*, double*, double, double*, double*), void (*h)(
 
     printf("Initializing distribution...\n\n");
 
-    initialize_grid(f, P, &G, M, T, BOUNDS, BOUND_f); 
+    initialize_grid(f, P, &G, M, T, TV, BOUNDS, BOUND_f); 
     if(BOUNDS){G.lo_bound = DBL_MAX; G.hi_bound = -DBL_MAX; set_bounds(P, &G);} 
     normalize_tree(P, &G); 
 
@@ -1285,7 +1285,7 @@ void run_gbees(void (*f)(double*, double*, double, double*, double*), void (*h)(
             rt = 0;
             while (rt < RECORD_TIME) { // time between PDF recordings
 
-                grow_tree(f, P, G, T, BOUNDS, BOUND_f);
+                grow_tree(f, P, G, T, TV, BOUNDS, BOUND_f);
                 check_cfl_condition(P, &G); 
                 G.dt = fmin(G.dt, RECORD_TIME - rt);
                 rt += G.dt; G.t += G.dt; 
@@ -1320,12 +1320,12 @@ void run_gbees(void (*f)(double*, double*, double, double*, double*), void (*h)(
                 free(P_PATH);
             }
 
-            // if (COLLISIONS) { // record collisions
-            //     C_PATH = concat_file(P_DIR, "/C", nm, "/c_", record_count); 
-            //     record_collisions(P, C_PATH);
-            //     record_count += 1;
-            //     free(C_PATH);
-            // }
+            if (COLLISIONS) { // record collisions
+                C_PATH = concat_file(P_DIR, "/C", nm, "/c_", record_count); 
+                record_collisions(P, C_PATH);
+                record_count += 1;
+                free(C_PATH);
+            }
 
             mt += rt;
         }

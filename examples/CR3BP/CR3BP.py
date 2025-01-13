@@ -56,8 +56,9 @@ OUTPUT = True                                   # Write info to terminal
 RECORD = True                                   # Write PDFs to .txt file
 MEASURE = False                                 # Take discrete measurement updates
 BOUNDS = True                                   # Add inadmissible regions to grid
-COLLISIONS = True                               # Track collisions
+COLLISIONS = False                              # Track collisions
+TV = False                                      # Time-invariant dynamics     
 #============================================================================================================#
 
 #================================================== GBEES ===================================================#
-gbees.run_gbees(CR3BP, None, CR3BP_J, G, M, T, P_DIR, M_DIR, NUM_DIST, NUM_MEAS, DEL_STEP, OUTPUT_FREQ, CAPACITY, DIM_h, OUTPUT, RECORD, MEASURE, BOUNDS, COLLISIONS)
+gbees.run_gbees(CR3BP, None, CR3BP_J, G, M, T, P_DIR, M_DIR, NUM_DIST, NUM_MEAS, DEL_STEP, OUTPUT_FREQ, CAPACITY, DIM_h, OUTPUT, RECORD, MEASURE, BOUNDS, COLLISIONS, TV)

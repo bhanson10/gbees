@@ -53,7 +53,7 @@ def Traj_create(n, coef):
     coef = (ct.c_double * n)(*coef)
     return lib.Traj_create(n, coef)
 
-def run_gbees(f, h, BOUND_f, G, M, T, P_DIR, M_DIR, NUM_DIST, NUM_MEAS, DEL_STEP, OUTPUT_FREQ, CAPACITY, DIM_h, OUTPUT, RECORD, MEASURE, BOUNDS, COLLISIONS):
+def run_gbees(f, h, BOUND_f, G, M, T, P_DIR, M_DIR, NUM_DIST, NUM_MEAS, DEL_STEP, OUTPUT_FREQ, CAPACITY, DIM_h, OUTPUT, RECORD, MEASURE, BOUNDS, COLLISIONS, TV):
 
     c_P_DIR = P_DIR.encode('utf-8')
     c_P_DIR = ct.create_string_buffer(c_P_DIR)
@@ -84,11 +84,11 @@ def run_gbees(f, h, BOUND_f, G, M, T, P_DIR, M_DIR, NUM_DIST, NUM_MEAS, DEL_STEP
             J = BOUND_f(x, coef)
             return J
         
-        lib.run_gbees.argtypes = [SYS_CALLBACK_FUNC, SYS_CALLBACK_FUNC, BOUND_CALLBACK_FUNC, Grid, Meas, Traj, ct.c_char_p, ct.c_char_p, ct.c_int, ct.c_int, ct.c_int, ct.c_int, ct.c_int, ct.c_int, ct.c_bool, ct.c_bool, ct.c_bool, ct.c_bool, ct.c_bool]
+        lib.run_gbees.argtypes = [SYS_CALLBACK_FUNC, SYS_CALLBACK_FUNC, BOUND_CALLBACK_FUNC, Grid, Meas, Traj, ct.c_char_p, ct.c_char_p, ct.c_int, ct.c_int, ct.c_int, ct.c_int, ct.c_int, ct.c_int, ct.c_bool, ct.c_bool, ct.c_bool, ct.c_bool, ct.c_bool, ct.c_bool]
         lib.run_gbees.restype = None
     else:
         c_BOUND_f = None
-        lib.run_gbees.argtypes = [SYS_CALLBACK_FUNC, SYS_CALLBACK_FUNC, ct.c_char_p, Grid, Meas, Traj, ct.c_char_p, ct.c_char_p, ct.c_int, ct.c_int, ct.c_int, ct.c_int, ct.c_int, ct.c_int, ct.c_bool, ct.c_bool, ct.c_bool, ct.c_bool, ct.c_bool]
+        lib.run_gbees.argtypes = [SYS_CALLBACK_FUNC, SYS_CALLBACK_FUNC, ct.c_char_p, Grid, Meas, Traj, ct.c_char_p, ct.c_char_p, ct.c_int, ct.c_int, ct.c_int, ct.c_int, ct.c_int, ct.c_int, ct.c_bool, ct.c_bool, ct.c_bool, ct.c_bool, ct.c_bool, ct.c_bool]
         lib.run_gbees.restype = None
 
-    lib.run_gbees(c_f, c_h, c_BOUND_f, G, M, T, c_P_DIR, c_M_DIR, ct.c_int(NUM_DIST), ct.c_int(NUM_MEAS), ct.c_int(DEL_STEP), ct.c_int(OUTPUT_FREQ), ct.c_int(CAPACITY), ct.c_int(DIM_h), ct.c_bool(OUTPUT), ct.c_bool(RECORD), ct.c_bool(MEASURE), ct.c_bool(BOUNDS), ct.c_bool(COLLISIONS))
+    lib.run_gbees(c_f, c_h, c_BOUND_f, G, M, T, c_P_DIR, c_M_DIR, ct.c_int(NUM_DIST), ct.c_int(NUM_MEAS), ct.c_int(DEL_STEP), ct.c_int(OUTPUT_FREQ), ct.c_int(CAPACITY), ct.c_int(DIM_h), ct.c_bool(OUTPUT), ct.c_bool(RECORD), ct.c_bool(MEASURE), ct.c_bool(BOUNDS), ct.c_bool(COLLISIONS), ct.c_bool(TV))

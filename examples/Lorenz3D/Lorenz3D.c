@@ -48,10 +48,11 @@ int main(void){
     bool MEASURE = true;                           // Take discrete measurement updates
     bool BOUNDS = false;                           // Add inadmissible regions to grid
     bool COLLISIONS = false;                       // Track collisions
+    bool TV = false;                               // Time-invariant dynamics 
     //==========================================================================================================//
 
     //================================================= GBEES ==================================================//
-    run_gbees(Lorenz3D, z, NULL, G, M, T, P_DIR, M_DIR, NUM_DIST, NUM_MEAS, DEL_STEP, OUTPUT_FREQ, CAPACITY, DIM_h, OUTPUT, RECORD, MEASURE, BOUNDS, COLLISIONS);
+    run_gbees(Lorenz3D, z, NULL, G, M, T, P_DIR, M_DIR, NUM_DIST, NUM_MEAS, DEL_STEP, OUTPUT_FREQ, CAPACITY, DIM_h, OUTPUT, RECORD, MEASURE, BOUNDS, COLLISIONS, TV);
 
     return 0;
 }
