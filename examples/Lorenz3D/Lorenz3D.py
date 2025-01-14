@@ -3,7 +3,7 @@
 
 import sys
 sys.path.append('../../')
-import gbeespyhash as gbees # type: ignore
+import gbeeshashpy as gbees # type: ignore
 
 DIM_f = 3 # State dimension
 DIM_h = 1 # Measurement dimension
