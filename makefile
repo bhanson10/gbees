@@ -12,7 +12,7 @@ LDLIBS=-lm
 SRCS = $(wildcard *.c) $(wildcard ../../*.c)
 OBJS = $(SRCS:%.c=%.o)
 
-TARGET = gbees-hash.so
+TARGET = gbees.so
 
 .DEFAULT: all
 

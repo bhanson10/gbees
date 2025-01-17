@@ -1,9 +1,9 @@
-# CR3BP.py, https://github.com/bhanson10/gbees-hash/tree/main/examples/CR3BP
+# CR3BP.py, https://github.com/bhanson10/gbees/tree/main/examples/CR3BP
 # Copyright 2024 by Benjamin Hanson, published under BSD 3-Clause License.
 
 import sys
 sys.path.append('../../')
-import gbeeshashpy as gbees  # type: ignore
+import gbeespy as gbees  # type: ignore
 
 DIM_f = 6 # State dimension
 DIM_h = 6 # Measurement dimension

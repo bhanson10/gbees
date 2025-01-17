@@ -1,4 +1,4 @@
-// gbees-hash.c, https://github.com/bhanson10/gbees-hash
+// gbees.c, https://github.com/bhanson10/gbees
 // Copyright 2024 by Benjamin Hanson, published under BSD 3-Clause License.
 
 #include <stdlib.h>
@@ -7,7 +7,7 @@
 #include <float.h>
 #include <time.h>
 
-#include "gbees-hash.h"
+#include "gbees.h"
 
 #define TOL 1E-8
 #define FNV_OFFSET 14695981039346656037ULL

@@ -1,4 +1,4 @@
-% plot_Lorenz6D.m, https://github.com/bhanson10/gbees-hash/tree/main/examples/Lorenz6D
+% plot_Lorenz6D.m, https://github.com/bhanson10/gbees/tree/main/examples/Lorenz6D
 % Copyright 2024 by Benjamin Hanson, published under BSD 3-Clause License.
 
 close all; clc; clear all; 

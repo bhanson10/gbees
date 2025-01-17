@@ -1,4 +1,4 @@
-% plot_collisions.m, https://github.com/bhanson10/gbees-hash/tree/main/examples
+% plot_collisions.m, https://github.com/bhanson10/gbees/tree/main/examples
 % Copyright 2024 by Benjamin Hanson, published under BSD 3-Clause License.
 
 clear all; close all; clc; 

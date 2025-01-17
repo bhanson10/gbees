@@ -1,7 +1,7 @@
-// Lorenz6D.c, https://github.com/bhanson10/gbees-hash/tree/main/examples/Lorenz6D
+// Lorenz6D.c, https://github.com/bhanson10/gbees/tree/main/examples/Lorenz6D
 // Copyright 2024 by Benjamin Hanson, published under BSD 3-Clause License.
 
-#include "../../gbees-hash.h" 
+#include "../../gbees.h" 
 #include "Lorenz6D.h"
 
 // This function defines the dynamics model - required

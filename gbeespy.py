@@ -1,9 +1,9 @@
-# gbeespy.py, https://github.com/bhanson10/gbees-hash
+# gbeespy.py, https://github.com/bhanson10/gbees
 # Copyright 2024 by Benjamin Hanson, published under BSD 3-Clause License.
 
 import ctypes as ct
 
-lib = ct.CDLL("../../gbees-hash.so")
+lib = ct.CDLL("../../gbees.so")
 TOL = 1E-8
 
 class Meas(ct.Structure):

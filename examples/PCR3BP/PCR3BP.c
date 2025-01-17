@@ -1,7 +1,7 @@
-// PCR3BP.c, https://github.com/bhanson10/gbees-hash/tree/main/examples/PCR3BP
+// PCR3BP.c, https://github.com/bhanson10/gbees/tree/main/examples/PCR3BP
 // Copyright 2024 by Benjamin Hanson, published under BSD 3-Clause License.
 
-#include "../../gbees-hash.h" // REF- do not include c files
+#include "../../gbees.h" // REF- do not include c files
 #include "PCR3BP.h"
 
 // This function defines the dynamics model - required
