@@ -49,7 +49,7 @@ for i = 1:size(x_mc_1, 2)
     x_mc = (x_mc - xi) * R;
     
     % GBEES
-    P_FILE = "./results/c/P0/pdf_" + num2str(i - 1) + ".txt";
+    P_FILE = "./results/<language>/P0/pdf_" + num2str(i - 1) + ".txt";
     [x_gbees, P_gbees, n_gbees, ~] = parse_nongaussian_txt(P_FILE);
     
     Nx = size(unique(x_gbees(:,1)),1); Ny = size(unique(x_gbees(:,2)),1);
