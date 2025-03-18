@@ -39,6 +39,7 @@ for i = 1:size(x_mc_1, 2)
         leg = legend("Color", "w", "Orientation", "Horizontal", "FontSize", 24, "FontName", "times", "Interpreter", "latex");
         leg.Layout.Tile = "south";
         p1.display = 1; 
+        scatter(NaN, NaN, 10, NaN, "filled", "DisplayName", "GBEES");  
     end
 
     % MC
@@ -47,18 +48,20 @@ for i = 1:size(x_mc_1, 2)
     Pi = cov(x_mc);
     [Vi, Di] = eig(Pi); R = Vi * [0 1; -1 0];
     x_mc = (x_mc - xi) * R;
-    
-    % GBEES
-    P_FILE = "./results/<language>/P0/pdf_" + num2str(i - 1) + ".txt";
-    [x_gbees, P_gbees, n_gbees, ~] = parse_nongaussian_txt(P_FILE);
-    
-    Nx = size(unique(x_gbees(:,1)),1); Ny = size(unique(x_gbees(:,2)),1);
-    x_gbees = (x_gbees - xi) * R; 
-   
-    % plotting  
-    scatter(x_gbees(:, 1), x_gbees(:, 2), 10, P_gbees, "filled", "DisplayName", "GBEES");  
     scatter(x_mc(:, 1), x_mc(:, 2), 20, "r", "Marker", "x", "DisplayName", "MC {     }");   
     plot_gaussian_ellipsoid([0; 0], R * Pi * R', 3, p1);
+    
+    
+    % GBEES
+    nexttile(count + 5); colorbar; 
+    if i ~= 1, xlim([-2, 2]); ylim([-2e-4, 1e-4]); else, xlim([-0.03, 0.03]); ylim([-8e-4, 8e-4]); end
+    P_FILE = "./results/<language>/P0/pdf_" + num2str(i - 1) + ".txt";
+    [x_gbees, P_gbees, n_gbees, ~] = parse_nongaussian_txt(P_FILE);
+    Nx = size(unique(x_gbees(:,1)),1); Ny = size(unique(x_gbees(:,2)),1);
+    x_gbees = (x_gbees - xi) * R; 
+    scatter(x_gbees(:, 1), x_gbees(:, 2), 10, P_gbees, "filled", "DisplayName", "GBEES");  
+    plot_gaussian_ellipsoid([0; 0], R * Pi * R', 3, p1);
+
     count = count + 1; 
 end
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -68,14 +71,14 @@ function initialize_figures()
 
     cmap = jet; bg = cmap(1, :); 
 
-    f1 = figure(1); clf; hold on; f1.Position = [30,232,1461,372];
-    tiledlayout(1, 5, 'TileSpacing','compact');
+    f1 = figure(1); clf; hold on; f1.Position = [32,158,1461,552];
+    tiledlayout(2, 5, 'TileSpacing','compact');
     
     count = 1;
-    for i = 1:1
+    for i = 1:2
         for j = 1:5
             nexttile(count); hold on; set(gca, 'Color', bg, 'FontName' , 'Times', 'FontSize', 14); colormap("jet");
-            if (i == 1)&&(j==1)
+            if(j==1)
                 xlabel("$\delta L$", 'FontSize', 18, 'FontName', 'Times', 'Interpreter', 'latex'); 
                 ylabel("$\delta l$", 'FontSize', 18, 'FontName', 'Times', 'Interpreter', 'latex'); 
             end
