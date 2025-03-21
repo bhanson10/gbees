@@ -41,7 +41,7 @@ int main(void){
     for(int i = 0; i < DIM_f; i ++){
         del[i] = pow(M.cov[i][i],0.5)/2;
     }
-    Grid G = Grid_create(DIM_f, 1E-7, M.mean, del); // Inputs: (dimension, probability threshold, center, grid width)       
+    Grid G = Grid_create(DIM_f, 0.0, 1E-7, M.mean, del); // Inputs: (dimension, initial time, probability threshold, center, grid width)       
 
     double coef[] = {2.528017528540000E-5};         // CR3BP trajectory attributes (mu)
     Traj T = Traj_create(1, coef);                  // Inputs: (# of coefficients, coefficients)

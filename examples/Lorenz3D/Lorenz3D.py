@@ -35,7 +35,7 @@ print("Reading in user inputs...\n")
 dx = [None] * DIM_f                            # Grid width, default is half of the std. dev. from the initial measurement 
 for i in range(DIM_f):
     dx[i] = (M.cov[i][i]**(0.5))/2
-G = gbees.Grid_create(DIM_f, 5E-6, M.mean, dx) # Inputs: (dimension, probability threshold, center, grid width)    
+G = gbees.Grid_create(DIM_f, 0.0, 5E-6, M.mean, dx) # Inputs: (dimension, initial time, probability threshold, center, grid width)    
 
 coef = [4.0, 1.0, 48.0]                        # Lorenz3D trajectory attributes (sigma, beta, r)
 T = gbees.Traj_create(len(coef), coef)         # Inputs: (# of coefficients, coefficients)

@@ -94,11 +94,11 @@ void Meas_free(Meas *M) {
     return; 
 }
 
-Grid Grid_create(int dim, double thresh, double *center, double *dx){
+Grid Grid_create(int dim, double t0, double thresh, double *center, double *dx){
     Grid G; 
     G.dim = dim; 
     G.thresh = thresh; 
-    G.t = 0; 
+    G.t = t0; 
     G.dt = DBL_MAX; 
     G.center = malloc(dim * sizeof(double));
     G.dx = malloc(dim * sizeof(double *));

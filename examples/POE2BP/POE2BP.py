@@ -28,7 +28,7 @@ print("Reading in user inputs...\n")
 dx = [None] * DIM_f                            # Grid width, default is half of the std. dev. from the initial measurement 
 dx[0] = M.cov[0][0]**0.5/8;                    # dL
 dx[1] = M.cov[1][1]**0.5/5;                    # dl
-G = gbees.Grid_create(DIM_f, 1E-9, M.mean, dx) # Inputs: (dimension, probability threshold, center, grid width)    
+G = gbees.Grid_create(DIM_f, 0.0, 1E-9, M.mean, dx) # Inputs: (dimension, initial time, probability threshold, center, grid width)    
 
 coef = [19.910350621818949]                    # POE2BP trajectory attributes (mu)
 T = gbees.Traj_create(len(coef), coef)         # Inputs: (# of coefficients, coefficients)

@@ -48,7 +48,7 @@ print("Reading in user inputs...\n")
 dx = [None] * DIM_f                             # Grid width, default is half of the std. dev. from the initial measurement 
 for i in range(DIM_f):
     dx[i] = (M.cov[i][i]**(0.5))/2
-G = gbees.Grid_create(DIM_f, 1E-7, M.mean, dx); # Inputs: (dimension, probability threshold, center, grid width)    
+G = gbees.Grid_create(DIM_f, 0.0, 1E-7, M.mean, dx); # Inputs: (dimension, initial time, probability threshold, center, grid width)    
  
 coef = [1.901109735892602E-07]                  # PCR3BP trajectory attributes (mu)
 T = gbees.Traj_create(len(coef), coef)          # Inputs: (# of coefficients, coefficients)

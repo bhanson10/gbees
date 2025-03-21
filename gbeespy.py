@@ -34,12 +34,12 @@ class Grid(ct.Structure):
         ("lo_bound", ct.POINTER(ct.c_double))
     ]
 
-def Grid_create(dim, thresh, center, dx):
-    lib.Grid_create.argtypes = [ct.c_int, ct.c_double, ct.POINTER(ct.c_double), ct.POINTER(ct.c_double)]
+def Grid_create(dim, t0, thresh, center, dx):
+    lib.Grid_create.argtypes = [ct.c_int, ct.c_double, ct.c_double, ct.POINTER(ct.c_double), ct.POINTER(ct.c_double)]
     lib.Grid_create.restype = Grid
 
     dx = (ct.c_double * dim)(*dx)
-    return lib.Grid_create(dim, thresh, center, dx)
+    return lib.Grid_create(dim, t0, thresh, center, dx)
 
 class Traj(ct.Structure):
     _fields_ = [
