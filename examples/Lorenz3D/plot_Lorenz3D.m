@@ -86,10 +86,10 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function initialize_figures()
 
-    f1 = figure(1); clf; hold all; f1.Position = [150 200 1200 475];
+    f1 = figure(1); clf; hold on; f1.Position = [150 200 1200 475];
     tiledlayout(1, 2, 'TileSpacing','compact');
 
-    nexttile(1); hold all; 
+    nexttile(1); hold on; 
     view(-109,14); lighting phong; light('Position',[-1 0 0]); 
     set(gca, 'FontName' , 'Times', 'FontSize', 14);
     xlabel("$x_1$", 'FontSize', 18, 'FontName', 'Times', 'Interpreter', 'latex');
@@ -106,7 +106,7 @@ function initialize_figures()
     zticks([-30 -20 -10 0 10 20 30])
     zticklabels({'-30','-20','-10','0','10', '20', '30'})
     
-    nexttile(2); hold all; 
+    nexttile(2); hold on; 
     view(-109,14); lighting phong; light('Position',[-1 0 0]);
     set(gca, 'FontName' , 'Times', 'FontSize', 14);
     xlabel("$x_1$", 'FontSize', 18, 'FontName', 'Times', 'Interpreter', 'latex');
