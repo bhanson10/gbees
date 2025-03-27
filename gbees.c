@@ -6,6 +6,7 @@
 #include <string.h>
 #include <float.h>
 #include <time.h>
+#include <lapacke.h>
 
 #include "gbees.h"
 
@@ -18,11 +19,11 @@ void exit_nomem(const char* error_string) {
     exit(EXIT_FAILURE);
 }
 
-Meas Meas_create(int dim, const char *M_DIR, const char *M_FILE) {
+Meas Meas_create(int dim, const char* M_DIR, const char* M_FILE) {
     char M_PATH[256];
     snprintf(M_PATH, sizeof(M_PATH), "%s/%s", M_DIR, M_FILE);
 
-    FILE *m_file = fopen(M_PATH, "r");
+    FILE* m_file = fopen(M_PATH, "r");
     if (m_file == NULL) {
         fprintf(stderr, "Error: could not open file %s", M_PATH);
         exit(EXIT_FAILURE);
@@ -31,7 +32,7 @@ Meas Meas_create(int dim, const char *M_DIR, const char *M_FILE) {
     Meas M;
     M.dim = dim; 
     M.mean = malloc(dim * sizeof(double));
-    M.cov = malloc(dim * sizeof(double *));
+    M.cov = malloc(dim * sizeof(double*));
     if (M.mean == NULL || M.cov == NULL) {
         const char* error_string = "measurement creation"; 
         exit_nomem(error_string); 
@@ -45,7 +46,7 @@ Meas Meas_create(int dim, const char *M_DIR, const char *M_FILE) {
     }
 
     char line[256];
-    char *token;
+    char* token;
     int count = 0;
 
     fgets(line, sizeof(line), m_file); // skip label line
@@ -79,7 +80,7 @@ Meas Meas_create(int dim, const char *M_DIR, const char *M_FILE) {
     return M;
 }
 
-void Meas_free(Meas *M) {
+void Meas_free(Meas* M) {
     if (M->mean != NULL) {
         free(M->mean);
     }
@@ -94,39 +95,108 @@ void Meas_free(Meas *M) {
     return; 
 }
 
-Grid Grid_create(int dim, double t0, double thresh, double *center, double *dx){
+Grid Grid_create(int dim, double t0, double thresh, Meas M, double* factor){
     Grid G; 
     G.dim = dim; 
     G.thresh = thresh; 
     G.t = t0; 
     G.dt = DBL_MAX; 
     G.center = malloc(dim * sizeof(double));
-    G.dx = malloc(dim * sizeof(double *));
-    if (G.center == NULL || G.dx == NULL) {
+    G.dx = malloc(dim * sizeof(double*));
+    G.factor = malloc(dim * sizeof(double*));
+    if (G.center == NULL || G.dx == NULL || G.factor == NULL){
         const char* error_string = "grid creation"; 
         exit_nomem(error_string); 
     }
     for(int i = 0; i < dim; i++){
-        G.center[i] = center[i]; 
-        G.dx[i] = dx[i]; 
+        G.center[i] = M.mean[i]; 
+        G.factor[i] = factor[i]; 
     }
     G.hi_bound = DBL_MAX; 
     G.lo_bound = -DBL_MAX; 
+
+    double A[dim * dim]; int count = 0; 
+    for(int i = 0; i < dim; i++){
+        for(int j = 0; j < dim; j++){
+            A[count] = M.cov[i][j]; 
+            count++;
+        }
+    }
+
+    double eigvals[dim]; // Array to hold eigenvalues
+    int lda = dim;       // Leading dimension of the matrix
+    int info;            // LAPACK info code
+    info = LAPACKE_dsyev(LAPACK_COL_MAJOR, 'V', 'U', dim, A, lda, eigvals);
+    if (info != 0) {
+        perror("LAPACK failed to compute eigenvalues.\n");
+    }
+
+    G.R = (double**)malloc(dim * sizeof(double*));
+    G.Rt = (double**)malloc(dim * sizeof(double*));
+    if((G.R == NULL)||(G.Rt == NULL)){
+        const char* error_string = "grid creation"; 
+        exit_nomem(error_string);
+    }
+    for (int i = 0; i < dim; i++) {
+        G.R[i] = (double*)malloc(dim * sizeof(double));
+        G.Rt[i] = (double*)malloc(dim * sizeof(double));
+        if((G.R[i] == NULL)||(G.Rt[i] == NULL)){
+            const char* error_string = "grid creation"; 
+            exit_nomem(error_string);
+        }
+    }
+
+    for (int i = 0; i < dim; i++) {
+        for (int j = 0; j < dim; j++) {
+            G.R[i][j]  = A[j * dim + i];
+            G.Rt[j][i] = A[j * dim + i];
+        }
+    }
+
+    // Calculating dx based on new rotated grid
+    double RtCov[G.dim][G.dim];
+    for (int i = 0; i < G.dim; i++) {
+        for (int j = 0; j < G.dim; j++) {
+            RtCov[i][j] = 0;
+            for (int k = 0; k < G.dim; k++) {
+                RtCov[i][j] += G.Rt[i][k] * M.cov[k][j];
+            }
+        }
+    }
+    double RtCovR[G.dim][G.dim];
+    for (int i = 0; i < G.dim; i++) {
+        for (int j = 0; j < G.dim; j++) {
+            RtCovR[i][j] = 0;
+            for (int k = 0; k < G.dim; k++) {
+                RtCovR[i][j] += RtCov[i][k] * G.R[k][j];
+            }
+        }
+    }
+    for(int i = 0; i < G.dim; i++){
+        G.dx[i] = sqrt(RtCovR[i][i]) / (2.0 * G.factor[i]); 
+    }
+
     return G;
 }
 
-void Grid_free(Grid *G) {
+void Grid_free(Grid* G) {
     // Free the allocated memory
     free(G->center);
     free(G->dx);
-
+    for (int i = 0; i < G->dim; i++){
+        free(G->R[i]); free(G->Rt[i]);
+    }
+    free(G->R); free(G->Rt); 
+            
     // Set pointers to NULL to avoid dangling pointers
     G->center = NULL;
     G->dx = NULL;
+    G->R = NULL;
+    G->Rt = NULL;
     return; 
 }
 
-Traj Traj_create(int n, double *coef){
+Traj Traj_create(int n, double* coef){
     Traj T; 
     T.coef = malloc(n * sizeof(double));
     if (T.coef == NULL) {
@@ -139,7 +209,7 @@ Traj Traj_create(int n, double *coef){
     return T;
 }
 
-void Traj_free(Traj *T) {
+void Traj_free(Traj* T) {
     if (T->coef != NULL) {
         free(T->coef);
         T->coef = NULL;
@@ -159,8 +229,8 @@ HashTableEntry* HashTableEntry_create(int dim, int* state, double prob, double J
     entry->prob = prob;
     entry->v = (double*)malloc(dim * sizeof(double));
     entry->ctu = (double*)malloc(dim * sizeof(double));
-    entry->i_nodes = (HashTableEntry**)malloc(dim * sizeof(HashTableEntry *));
-    entry->k_nodes = (HashTableEntry**)malloc(dim * sizeof(HashTableEntry *));
+    entry->i_nodes = (HashTableEntry**)malloc(dim * sizeof(HashTableEntry*));
+    entry->k_nodes = (HashTableEntry**)malloc(dim * sizeof(HashTableEntry*));
     entry->dcu = 0; 
     entry->cfl_dt = 0; 
     entry->new_f = 0; 
@@ -274,7 +344,7 @@ uint64_t FNV1a(int* state, int dim) {
   c ^= b; c -= ROTATE(b, 24); \
 }
 
-uint64_t lookup3(const int *state, size_t dim) {
+uint64_t lookup3(const int* state, size_t dim) {
     uint64_t a, b, c;
     a = b = c = 0xdeadbeefdeadbeefLL + (dim << 3);
 
@@ -306,7 +376,7 @@ uint64_t lookup3(const int *state, size_t dim) {
 
 #define get16bits(d) ((uint32_t)((d) & 0xFFFF))
 
-uint32_t SuperFastHash(const int *state, int dim) {
+uint32_t SuperFastHash(const int* state, int dim) {
     uint32_t hash = (uint32_t)dim, tmp;
     int rem;
 
@@ -343,7 +413,7 @@ uint32_t SuperFastHash(const int *state, int dim) {
     return hash;
 }
 
-uint64_t DJBX33A(const int *state, int dim) {
+uint64_t DJBX33A(const int* state, int dim) {
     uint64_t hash = 5381;  // Initial value for the DJBX33A hash function
 
     for (int i = 0; i < dim; ++i) {
@@ -357,7 +427,7 @@ uint64_t DJBX33A(const int *state, int dim) {
     return hash;  // Return the 64-bit hash value
 }
 
-uint64_t MurmurHash(const int *state, int dim) {
+uint64_t MurmurHash(const int* state, int dim) {
     const uint64_t seed = 0;  // Initial seed value
     const uint64_t m = 0xc6a4a7935bd19ea9ULL;
     const int r = 47;
@@ -385,7 +455,7 @@ uint64_t MurmurHash(const int *state, int dim) {
     return hash;  // Return the 64-bit hash value
 }
 
-uint64_t BuzHash(const int *state, int dim) {
+uint64_t BuzHash(const int* state, int dim) {
     uint64_t hash = 0;  // Initialize the hash value
     uint64_t prime = 0x5bd1e995;  // A prime number used in the hash function
 
@@ -458,6 +528,19 @@ void mul_mat_vec(double* matrix, double* vector, double* result, int size) {
         }
     }
     return; 
+}
+
+double* matrix_vector_multiply(int n, int m, double** matrix, double* vector){
+    double* result = malloc(n * sizeof(double));
+
+    for (int i = 0; i < n; ++i) {
+        result[i] = 0.0;  // Initialize each element of the result vector
+        for (int j = 0; j < m; ++j) {
+            result[i] += matrix[i][j] * vector[j];
+        }
+    }
+    
+    return result; 
 }
 
 double dot_product(double* vec1, double* vec2, int size) {
@@ -602,7 +685,7 @@ int get_size(HashTable* P){
 /*==============================================================================
                         GBEES FUNCTION DEFINITIONS
 ==============================================================================*/
-void initialize_adv(void (*f)(double*, double*, double, double*, double*), HashTable* P, Grid* G, Traj T, bool TV){
+void initialize_adv(void (*f)(double*, double*, double, double*), HashTable* P, Grid* G, Traj T, bool TV){
     for(int idx = 0; idx < P->capacity; idx++){
         HashTableEntry* head = P->entries[idx];
         if(head != NULL){
@@ -611,14 +694,22 @@ void initialize_adv(void (*f)(double*, double*, double, double*, double*), HashT
                 if((last->new_f == 0)||(TV == true)){
                     double x[G->dim];
                     for(int i = 0; i < G->dim; i++){
-                        x[i] = G->dx[i]*last->state[i]+G->center[i];
+                        x[i] = G->dx[i]*last->state[i]; 
                     }
-                    double xk[G->dim];
-                    (*f)(xk, x, G->t, G->dx, T.coef); 
-
+                    
+                    double xk[G->dim]; 
+                    double* xR;
+                    double advR[G->dim]; 
+                    double* adv; 
                     double sum = 0;
                     for(int i = 0; i < G->dim; i++){
-                        last->v[i] = xk[i];
+                        memcpy(xk, x, G->dim * sizeof(double));
+                        xk[i] += G->dx[i] / 2; 
+                        xR = matrix_vector_multiply(G->dim, G->dim, G->R, xk); // B.L.H. 
+                        for(int j = 0; j < G->dim; j++) xR[j] += G->center[j];
+                        (*f)(advR, xR, G->t, T.coef);
+                        adv = matrix_vector_multiply(G->dim, G->dim, G->Rt, advR); // B.L.H. 
+                        last->v[i] = adv[i];
                         sum += fabs(last->v[i]) / G->dx[i];
                     }
                     last->new_f = 1;
@@ -663,22 +754,24 @@ void initialize_ik_nodes(HashTable* P, Grid* G){
 
 void recursive_loop(HashTable* P, Grid* G, Meas M, Traj T, int level, int* current_state, double* current_state_vec, bool BOUNDS, double (*BOUND_f)(double*, double*)){
     if (level == G->dim) {
-        double prob = gauss_probability(M.dim, current_state_vec, M);
+        double* current_state_vecR = matrix_vector_multiply(G->dim, G->dim, G->R, current_state_vec); // B.L.H.
+        for(int j = 0; j < G->dim; j++) current_state_vecR[j] += G->center[j];
+        double prob = gauss_probability(M.dim, current_state_vecR, M);
         HashTable_insert(P, G, T, current_state, prob, BOUNDS, BOUND_f);
         return;
     }
 
-    int start = (int) round(-3 * pow(M.cov[level][level], 0.5) / G->dx[level]);
-    int end = (int) round(3 * pow(M.cov[level][level], 0.5) / G->dx[level]);
+    int start = (int) round(-6 * G->factor[level]); 
+    int end   = (int) round(6 * G->factor[level]); 
     for (int i = start; i <= end; i++) {
         current_state[level] = i;
-        current_state_vec[level] = i * G->dx[level] + G->center[level];
+        current_state_vec[level] = i * G->dx[level];
         recursive_loop(P, G, M, T, level + 1, current_state, current_state_vec, BOUNDS, BOUND_f);
     }
     return; 
 }
 
-void initialize_grid(void (*f)(double*, double*, double, double*, double*), HashTable* P, Grid* G, Meas M, Traj T, bool TV, bool BOUNDS, double (*BOUND_f)(double*, double*)){
+void initialize_grid(void (*f)(double*, double*, double, double*), HashTable* P, Grid* G, Meas M, Traj T, bool TV, bool BOUNDS, double (*BOUND_f)(double*, double*)){
     int current_state[G->dim]; double current_state_vec[G->dim];
     recursive_loop(P, G, M, T, 0, current_state, current_state_vec, BOUNDS, BOUND_f);
     initialize_adv(f, P, G, T, TV);
@@ -773,8 +866,15 @@ void write_cells(FILE* myfile, HashTable* P, Grid G){
             while(last != NULL){
                 if(last->prob >= G.thresh){
                     fprintf(myfile, "%.10e", last->prob);
-                    for (int i = 0; i < G.dim; i++) {
-                        fprintf(myfile, " %.10e", G.dx[i] * last->state[i] + G.center[i]);
+                    
+                    double x[G.dim];
+                    for (int i = 0; i < G.dim; i++){
+                        x[i] = G.dx[i] * last->state[i];
+                    }
+                    double* xR = matrix_vector_multiply(G.dim, G.dim, G.R, x); 
+                    for(int i = 0; i < G.dim; i++){
+                        xR[i] += G.center[i]; 
+                        fprintf(myfile, " %.10e", xR[i]);
                     }
                     fprintf(myfile, "\n");
                 }
@@ -901,7 +1001,7 @@ void create_neighbors(HashTable* P, Grid G, Traj T, bool BOUNDS, double (*BOUND_
     return; 
 }
 
-void grow_tree(void (*f)(double*, double*, double, double*, double*), HashTable* P, Grid G, Traj T, bool TV, bool BOUNDS, double (*BOUND_f)(double*, double*)){
+void grow_tree(void (*f)(double*, double*, double, double*), HashTable* P, Grid G, Traj T, bool TV, bool BOUNDS, double (*BOUND_f)(double*, double*)){
     create_neighbors(P, G, T, BOUNDS, BOUND_f);
     initialize_adv(f, P, &G, T, TV);
     initialize_ik_nodes(P, &G);
@@ -1120,13 +1220,13 @@ void mark_cells(HashTable* P, Grid G, double* del_probs, int** del_states, int* 
 }
 
 #ifdef __linux__ 
-  int compare_indices(const void *a, const void *b, void *del_probs) {
+  int compare_indices(const void* a, const void* b, void* del_probs) {
 #else  
-  int compare_indices(void *del_probs, const void *a, const void *b) {
+  int compare_indices(void* del_probs, const void* a, const void* b) {
 #endif  
-    const double *double_list = (double *)del_probs;
-    int idx1 = *(const int *)a;
-    int idx2 = *(const int *)b;
+    const double* double_list = (double*)del_probs;
+    int idx1 = *(const int*)a;
+    int idx2 = *(const int*)b;
 
     if (double_list[idx1] < double_list[idx2])
         return -1;
@@ -1209,7 +1309,7 @@ void prune_tree(HashTable* P, Grid G){
     return; 
 }
 
-void meas_up_recursive(void (*h)(double*, double*, double, double*, double*), HashTable* P, Grid G, Meas M, Traj T){
+void meas_up_recursive(void (*h)(double*, double*, double, double*), HashTable* P, Grid G, Meas M, Traj T){
     for(int idx = 0; idx < P->capacity; idx++){
         HashTableEntry* head = P->entries[idx];
         if(head != NULL){
@@ -1217,11 +1317,13 @@ void meas_up_recursive(void (*h)(double*, double*, double, double*, double*), Ha
             while(last != NULL){
                 double x[G.dim];
                 for(int i = 0; i < G.dim; i++){
-                    x[i] = G.dx[i]*last->state[i]+G.center[i];
+                    x[i] = G.dx[i]*last->state[i];
                 }
 
+                double* xR = matrix_vector_multiply(G.dim, G.dim, G.R, x); // B.L.H.
+                for(int i = 0; i < G.dim; i++) xR[i] += G.center[i];
                 double y[M.dim];
-                (*h)(y, x, G.t, G.dx, T.coef); 
+                (*h)(y, xR, G.t, T.coef); 
 
                 double prob = gauss_probability(M.dim, y, M);   
                 last->prob *= prob;
@@ -1257,7 +1359,7 @@ void record_collisions(HashTable* P, const char* FILE_NAME){
     return;
 }
 
-void run_gbees(void (*f)(double*, double*, double, double*, double*), void (*h)(double*, double*, double, double*, double*), double (*BOUND_f)(double*, double*), Grid G, Meas M, Traj T, char* P_DIR, char* M_DIR, int NUM_DIST, int NUM_MEAS, int DEL_STEP, int OUTPUT_FREQ, int CAPACITY, int DIM_h, bool OUTPUT, bool RECORD, bool MEASURE, bool BOUNDS, bool COLLISIONS, bool TV){
+void run_gbees(void (*f)(double*, double*, double, double*), void (*h)(double*, double*, double, double*), double (*BOUND_f)(double*, double*), Grid G, Meas M, Traj T, char* P_DIR, char* M_DIR, int NUM_DIST, int NUM_MEAS, int DEL_STEP, int OUTPUT_FREQ, int CAPACITY, int DIM_h, bool OUTPUT, bool RECORD, bool MEASURE, bool BOUNDS, bool COLLISIONS, bool TV){
     char* P_PATH; char* C_PATH; 
     double RECORD_TIME = M.T/(NUM_DIST-1);      
 
@@ -1342,7 +1444,7 @@ void run_gbees(void (*f)(double*, double*, double, double*, double*), void (*h)(
             char* M_FILE_NAME = "measurement";                                             
             char* M_FILE_EXT = ".txt"; 
             int length = snprintf(NULL, 0, "%s%d%s", M_FILE_NAME, nm+1, M_FILE_EXT) + 1;
-            char* M_FILE = (char *)malloc(length);
+            char* M_FILE = (char*)malloc(length);
             if (M_FILE == NULL) {
                 const char* error_string = "discrete measurement update"; 
                 exit_nomem(error_string); 

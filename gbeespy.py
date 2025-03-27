@@ -30,16 +30,19 @@ class Grid(ct.Structure):
         ("dt", ct.c_double),
         ("center", ct.POINTER(ct.c_double)),
         ("dx", ct.POINTER(ct.c_double)),
+        ("factor", ct.POINTER(ct.c_double)),
+        ("R", ct.POINTER(ct.POINTER(ct.c_double))),
+        ("Rt", ct.POINTER(ct.POINTER(ct.c_double))),
         ("hi_bound", ct.POINTER(ct.c_double)),
         ("lo_bound", ct.POINTER(ct.c_double))
     ]
 
-def Grid_create(dim, t0, thresh, center, dx):
-    lib.Grid_create.argtypes = [ct.c_int, ct.c_double, ct.c_double, ct.POINTER(ct.c_double), ct.POINTER(ct.c_double)]
+def Grid_create(dim, t0, thresh, M, factor):
+    lib.Grid_create.argtypes = [ct.c_int, ct.c_double, ct.c_double, Meas, ct.POINTER(ct.c_double)]
     lib.Grid_create.restype = Grid
 
-    dx = (ct.c_double * dim)(*dx)
-    return lib.Grid_create(dim, t0, thresh, center, dx)
+    factor = (ct.c_double * dim)(*factor)
+    return lib.Grid_create(dim, t0, thresh, M, factor)
 
 class Traj(ct.Structure):
     _fields_ = [
@@ -63,18 +66,18 @@ def run_gbees(f, h, BOUND_f, G, M, T, P_DIR, M_DIR, NUM_DIST, NUM_MEAS, DEL_STEP
     c_M_DIR = ct.create_string_buffer(c_M_DIR)
     c_M_DIR = ct.cast(c_M_DIR, ct.POINTER(ct.c_char))
 
-    SYS_CALLBACK_FUNC = ct.CFUNCTYPE(None, ct.POINTER(ct.c_double), ct.POINTER(ct.c_double), ct.c_double, ct.POINTER(ct.c_double), ct.POINTER(ct.c_double))
+    SYS_CALLBACK_FUNC = ct.CFUNCTYPE(None, ct.POINTER(ct.c_double), ct.POINTER(ct.c_double), ct.c_double, ct.POINTER(ct.c_double))
     BOUND_CALLBACK_FUNC = ct.CFUNCTYPE(ct.c_double, ct.POINTER(ct.c_double), ct.POINTER(ct.c_double))
 
     @SYS_CALLBACK_FUNC
-    def c_f(xk, x, t, dx, coef):
-        v = f(x, t, dx, coef)
+    def c_f(xk, x, t, coef):
+        v = f(x, t, coef)
         for i in range(len(v)):
             xk[i] = v[i]
 
     @SYS_CALLBACK_FUNC
-    def c_h(y, x, t, dx, coef):
-        v = h(x, t, dx, coef)
+    def c_h(y, x, t, coef):
+        v = h(x, t, coef)
         for i in range(len(v)):
             y[i] = v[i]
     
