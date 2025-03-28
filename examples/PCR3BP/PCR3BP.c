@@ -5,7 +5,7 @@
 #include "PCR3BP.h"
 
 // This function defines the dynamics model - required
-void PCR3BP(double* f, double* x, double t, double* dx, double* coef){
+void PCR3BP(double* f, double* x, double t, double* coef){
     double r1 = pow(pow(x[0]+coef[0],2)+pow(x[1],2),1.5);
     double r2 = pow(pow(x[0]-1+coef[0],2)+pow(x[1],2),1.5);
     f[0] = x[2];
@@ -15,7 +15,7 @@ void PCR3BP(double* f, double* x, double t, double* dx, double* coef){
 }
 
 // This function defines the measurement model - required if MEASURE == true
-void rtrr(double* h, double* x, double t, double* dx, double* coef){
+void rtrr(double* h, double* x, double t, double* coef){
     h[0] = pow(pow(x[0] - (1 - coef[0]), 2) + pow(x[1], 2),0.5); 
     h[1] = atan2(x[1], x[0] - (1 - coef[0])); 
     h[2] = ((x[0] - (1 - coef[0]))*x[2] + x[1]*x[3])/h[0];
@@ -42,11 +42,8 @@ int main(void){
     //========================================== Read in user inputs ===========================================//
     printf("Reading in user inputs...\n\n");
     
-    double del[DIM_f];                              // Grid width, default is half of the std. dev. from the initial measurement 
-    for(int i = 0; i < DIM_f; i ++){
-        del[i] = pow(M.cov[i][i],0.5)/2;
-    }
-    Grid G = Grid_create(DIM_f, 0.0, 1E-7, M.mean, del); // Inputs: (dimension, initial time, probability threshold, center, grid width)       
+    double factor[DIM_f] = {1.0, 1.0, 1.0, 1.0}; 
+    Grid G = Grid_create(DIM_f, 0.0, 1E-7, M, factor); // Inputs: (dimension, initial time, probability threshold, measure, grid width factor)       
 
     double coef[] = {1.901109735892602E-07};        // PCR3BP trajectory attributes (mu)
     Traj T = Traj_create(1, coef);                  // Inputs: (# of coefficients, coefficients)

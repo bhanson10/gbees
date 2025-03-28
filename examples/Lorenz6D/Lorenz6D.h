@@ -7,7 +7,7 @@
 #define DIM_f 6 // State dimension
 
 // This function defines the dynamics model - required
-void Lorenz6D(double* f, double* x, double t, double* dx, double* coef);
+void Lorenz6D(double* f, double* x, double t, double* coef);
 
 
 #endif

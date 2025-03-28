@@ -9,7 +9,7 @@ DIM_f = 6 # State dimension
 DIM_h = 6 # Measurement dimension
 
 # This function defines the dynamics model - required
-def CR3BP(x, t, dx, coef):
+def CR3BP(x, t, coef):
     r1 = ((x[0] + coef[0])**2 + (x[1])**2 + (x[2])**2)**1.5
     r2 = ((x[0] - 1 + coef[0])**2 + (x[1])**2 + (x[2])**2)**1.5
     f1 = x[3]
@@ -39,25 +39,23 @@ M = gbees.Meas_create(DIM_f, M_DIR, M_FILE)
 #=========================================== Read in user inputs ============================================#
 print("Reading in user inputs...\n")
 
-dx = [None] * DIM_f                                  # Grid width, default is half of the std. dev. from the initial measurement 
-for i in range(DIM_f):
-    dx[i] = (M.cov[i][i]**(0.5))/2
-G = gbees.Grid_create(DIM_f, 0.0, 1E-7, M.mean, dx)  # Inputs: (dimension, initial time, probability threshold, center, grid width)    
+factor = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+G = gbees.Grid_create(DIM_f, 0.0, 1E-7, M, factor)  # Inputs: (dimension, initial time, probability threshold, measurement, grid width factor)    
  
-coef = [2.528017528540000E-5]                        # CR3BP trajectory attributes (mu)
-T = gbees.Traj_create(len(coef), coef)               # Inputs: (# of coefficients, coefficients)
+coef = [2.528017528540000E-5]                       # CR3BP trajectory attributes (mu)
+T = gbees.Traj_create(len(coef), coef)              # Inputs: (# of coefficients, coefficients)
 
-NUM_DIST = 8                                         # Number of distributions recorded per measurement
-NUM_MEAS = 4                                         # Number of measurements
-DEL_STEP = 20                                        # Number of steps per deletion procedure
-OUTPUT_FREQ = 20                                     # Number of steps per output to terminal
-CAPACITY = int(2**18)                                # Size of hash table (power of 2 for optimal hashing)
-OUTPUT = True                                        # Write info to terminal
-RECORD = True                                        # Write PDFs to .txt file
-MEASURE = False                                      # Take discrete measurement updates
-BOUNDS = True                                        # Add inadmissible regions to grid
-COLLISIONS = False                                   # Track collisions
-TV = False                                           # Time-invariant dynamics     
+NUM_DIST = 8                                        # Number of distributions recorded per measurement
+NUM_MEAS = 4                                        # Number of measurements
+DEL_STEP = 20                                       # Number of steps per deletion procedure
+OUTPUT_FREQ = 20                                    # Number of steps per output to terminal
+CAPACITY = int(2**18)                               # Size of hash table (power of 2 for optimal hashing)
+OUTPUT = True                                       # Write info to terminal
+RECORD = True                                       # Write PDFs to .txt file
+MEASURE = False                                     # Take discrete measurement updates
+BOUNDS = True                                       # Add inadmissible regions to grid
+COLLISIONS = False                                  # Track collisions
+TV = False                                          # Time-invariant dynamics     
 #============================================================================================================#
 
 #================================================== GBEES ===================================================#

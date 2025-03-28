@@ -5,7 +5,7 @@
 #include "CR3BP.h"
 
 // This function defines the dynamics model - required
-void CR3BP(double* f, double* x, double t, double* dx, double* coef){
+void CR3BP(double* f, double* x, double t, double* coef){
     double r1 = pow(pow(x[0]+coef[0],2) + pow(x[1],2) + pow(x[2],2), 1.5);
     double r2 = pow(pow(x[0]-1+coef[0],2) + pow(x[1],2) + pow(x[2],2), 1.5);
     f[0] = x[3];
@@ -37,16 +37,13 @@ int main(void){
     //========================================== Read in user inputs ===========================================//
     printf("Reading in user inputs...\n\n");
 
-    double del[DIM_f];                              // Grid width, default is half of the std. dev. from the initial measurement 
-    for(int i = 0; i < DIM_f; i ++){
-        del[i] = pow(M.cov[i][i],0.5)/2;
-    }
-    Grid G = Grid_create(DIM_f, 0.0, 1E-7, M.mean, del); // Inputs: (dimension, initial time, probability threshold, center, grid width)       
+    double factor[DIM_f] = {1.0, 1.0, 1.0, 1.0, 1.0, 1.0};
+    Grid G = Grid_create(DIM_f, 0.0, 1E-8, M, factor); // Inputs: (dimension, initial time, probability threshold, measurement, grid width factor)       
 
     double coef[] = {2.528017528540000E-5};         // CR3BP trajectory attributes (mu)
     Traj T = Traj_create(1, coef);                  // Inputs: (# of coefficients, coefficients)
 
-    int NUM_DIST = 17;                              // Number of distributions recorded per measurement
+    int NUM_DIST = 2;                               // Number of distributions recorded per measurement
     int NUM_MEAS = 1;                               // Number of measurements
     int DEL_STEP = 20;                              // Number of steps per deletion procedure
     int OUTPUT_FREQ = 20;                           // Number of steps per output to terminal

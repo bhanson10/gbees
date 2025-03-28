@@ -10,10 +10,10 @@ ic.T = 3.727168019157753;
 ic.state = [1.001471995170839 -0.000017518099335 0.000071987832396 0.013633926328993];
 
 %% initializing figure
-f1 = figure(1); clf; hold all; f1.Position = [250 100 1000 700];
+f1 = figure(1); clf; hold on; f1.Position = [250 100 1000 700];
 tiledlayout(1, 2, 'TileSpacing','compact');
 
-nexttile(1); hold all; 
+nexttile(1); hold on; 
 axis("equal")
 set(gca, 'FontName', 'Times', 'FontSize', 14);
 xlabel("synodic $x$ (km)", "Interpreter","latex")
@@ -21,7 +21,7 @@ ylabel("synodic $y$ (km)", "Interpreter","latex")
 europa = nsidedpoly(1000, 'Center', [(1-prop.mu)*prop.LU, 0], 'Radius', prop.sec_r);
 plot(europa, 'FaceColor', 'm', 'EdgeColor','none');
 
-nexttile(2); hold all; 
+nexttile(2); hold on; 
 axis("equal")
 set(gca, 'FontName', 'Times', 'FontSize', 14);
 xlabel("synodic $\dot{x}$ (km/s)", "Interpreter","latex")
@@ -36,9 +36,13 @@ t = t.*prop.TU;
 %% nominal trajectory
 nexttile(1); 
 plot(x(:,1),x(:,2),'k-','LineWidth', 2,'HandleVisibility','off');
+xlim([(1-prop.mu)*prop.LU - 1.2e3, (1-prop.mu)*prop.LU + 1.2e3]);
+ylim([-1.7E3, 1.7E3]);
 drawnow;
 nexttile(2); 
 plot(x(:,3),x(:,4),'k-','LineWidth', 2,'HandleVisibility','off');
+xlim([-0.175, 0.175]);
+ylim([-0.25, 0.25]);
 drawnow;
 
 %% GBEES
@@ -51,9 +55,9 @@ C = [238, 102, 119;  % Red
 
 C  = C/255;
 
-p.alpha = [0.3, 0.4, 0.7]; 
-P_DIR = "<path_to_pdf>";
-
+P_DIR = "./results/<language>";
+p.alpha = [0.7, 0.2, 0.1]; 
+p.type = "grid"; 
 count = 1;
 for nm=0:NM-1
     p.color = C(nm + 1, :);
@@ -70,17 +74,18 @@ for nm=0:NM-1
     for i=set
         P_FILE = P_DIR_SUB + "/pdf_" + num2str(i) + ".txt";
 
-        [x_gbees, P_gbees, n_gbees, t_gbees(count)] = parse_nongaussian_txt(P_FILE, prop);
-    
-        xest_gbees{count} = zeros(size(x_gbees(1,:)));
-        for j=1:n_gbees
-            xest_gbees{count} = xest_gbees{count}+x_gbees(j,:).*P_gbees(j);
-        end
+        [x_gbees, P_gbees, ~, ~] = parse_nongaussian_txt(P_FILE, prop);
+        
+        [x_list, ~, x_idx] = unique(x_gbees(:,1:2), 'rows', 'stable');
+        Px_full = accumarray(x_idx, P_gbees, [], @sum);
+
+        [v_list, ~, v_idx] = unique(x_gbees(:,3:4), 'rows', 'stable');
+        Pv_full = accumarray(v_idx, P_gbees, [], @sum);
 
         nexttile(1); 
-        plot_nongaussian_surface(x_gbees(:,1:2),P_gbees,[normpdf(1)/normpdf(0), normpdf(2)/normpdf(0), normpdf(3)/normpdf(0)],p);
+        plot_nongaussian_surface_2(x_list, Px_full, 'p', p);
         nexttile(2); 
-        plot_nongaussian_surface(x_gbees(:,3:4),P_gbees,[normpdf(1)/normpdf(0), normpdf(2)/normpdf(0), normpdf(3)/normpdf(0)], p);
+        plot_nongaussian_surface_2(v_list, Pv_full, 'p', p);
         drawnow; 
         
         count = count + 1;
@@ -89,7 +94,7 @@ end
 
 P_FILE = P_DIR + "/P0/pdf_0.txt";
 p.color = C(1, :);
-[x_gbees, P_gbees, n_gbees, t_gbees(count)] = parse_nongaussian_txt(P_FILE, prop);
+[x_gbees, P_gbees, ~, ~] = parse_nongaussian_txt(P_FILE, prop);
 nexttile(1); 
 plot_nongaussian_surface(x_gbees(:,1:2),P_gbees,[normpdf(1)/normpdf(0), normpdf(2)/normpdf(0), normpdf(3)/normpdf(0)],p);
 nexttile(2); 
@@ -102,15 +107,14 @@ L{1} = "Enceladus\,\,\,";
 LH(2) = plot(NaN,NaN,'k-', 'LineWidth',1);
 L{2} = "Nominal\,\,\,";
 LH(3) = fill(nan, nan, nan, 'FaceAlpha', 0.7, 'FaceColor', C(1,:), 'EdgeColor', 'none');
-L{3} = "$p_\mathbf{x}(\mathbf{x}', t_{0+})\,\,\,$";
+L{3} = "$p(\mathbf{x}, t^{(0)})\,\,\,$";
 LH(4) = fill(nan, nan, nan, 'FaceAlpha', 0.7, 'FaceColor', C(2,:), 'EdgeColor', 'none');
-L{4} = "$p_\mathbf{x}(\mathbf{x}', t_{1+})\,\,\,$";
+L{4} = "$p(\mathbf{x}, t^{(1)})\,\,\,$";
 LH(5) = fill(nan, nan, nan, 'FaceAlpha', 0.7, 'FaceColor', C(3,:), 'EdgeColor', 'none');
-L{5} = "$p_\mathbf{x}(\mathbf{x}', t_{2+})\,\,\,$";
+L{5} = "$p(\mathbf{x}, t^{(2)})\,\,\,$";
 LH(6) = fill(nan, nan, nan, 'FaceAlpha', 0.7, 'FaceColor', C(4,:)', 'EdgeColor', 'none');
-L{6} = "$p_\mathbf{x}(\mathbf{x}', t_{3+})\,\,\,$";
-leg = legend(LH, L, 'Orientation', 'Horizontal', 'FontSize', 18, 'FontName', 'times', 'Interpreter', 'latex');
-leg.Layout.Tile = 'south';
+L{6} = "$p(\mathbf{x}, t^{(3)})\,\,\,$";
+leg = legend(LH, L, 'Orientation', 'Horizontal', "Position", [0.17,0.04,0.67,0.03], 'FontSize', 18, 'FontName', 'times', 'Interpreter', 'latex');
 drawnow; 
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                                FUNCTIONS
@@ -121,17 +125,11 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function [x, P, n, t] = parse_nongaussian_txt(filename, prop)
     fileID = fopen(filename, 'r'); t = str2double(fgetl(fileID));
-    
-    count = 1; 
-    while ~feof(fileID)
-        line = split(fgetl(fileID)); % Read a line as a string
-        P(count,1) = str2double(line{1});
-        x(count, :) = [str2double(line{2});str2double(line{3});str2double(line{4});str2double(line{5})].*prop.U';
-        count = count + 1; 
-    end
-    
-    % Close the file
+    fileID = fopen(filename, 'r');
+    data = textscan(fileID, '%s', 'Delimiter', '\n'); data = data{1};
+    t = str2num(data{1}); data = data(2:end); 
+    pdf = cellfun(@(x) str2num(x), data, 'UniformOutput', false); pdf = cell2mat(pdf); 
+    P = pdf(:,1); x = pdf(:,2:5).*prop.U; n = size(P, 1);
     fclose(fileID);
-    n = length(P); 
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

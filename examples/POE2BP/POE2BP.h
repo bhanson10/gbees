@@ -7,7 +7,7 @@
 #define DIM_f 2 // State dimension
 
 // This function defines the dynamics model - required
-void POE2BP(double* f, double* x, double t, double* dx, double* coef);
+void POE2BP(double* f, double* x, double t, double* coef);
 
 
 #endif

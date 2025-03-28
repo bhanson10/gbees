@@ -10,10 +10,10 @@ prop.T = 2.6513344042156235E+0; prop.r = 1560.8;
 ic = [1.0169962521469986; -1.0697953862098174E-20; -5.1360139986508944E-34; -1.3935178510137174E-14; 1.2575912545456968E-2; -3.1572204202682494E-33];
 
 %% initializing figure
-f1 = figure(1); clf; hold all; f1.Position = [50 100 1400 700];
+f1 = figure(1); clf; hold on; f1.Position = [50 100 1400 700];
 tiledlayout(1, 2, 'TileSpacing','compact');
 
-nexttile(1); hold all; 
+nexttile(1); hold on; 
 axis("equal")
 set(gca, 'FontName', 'Times', 'FontSize', 14);
 xlabel("synodic $x$ (km)", "Interpreter","latex")
@@ -24,7 +24,7 @@ X = X.*prop.r + (1-prop.mu)*prop.LU; Y = Y.*prop.r; Z = Z.*prop.r;
 surf(X, Y, Z, 'FaceColor', 'g', 'EdgeColor', 'none'); alpha(0.3); 
 drawnow;
 
-nexttile(2); hold all; 
+nexttile(2); hold on; 
 axis("equal")
 set(gca, 'FontName', 'Times', 'FontSize', 14);
 xlabel("synodic $\dot{x}$ (km/s)", "Interpreter","latex")
@@ -49,8 +49,8 @@ drawnow;
 
 %% GBEES
 NM = 1; 
-p.color = 'b'; p.alpha = [0.1, 0.2, 0.6]; 
-P_DIR = "./results/c";
+p.color = 'b'; p.type = "grid";  
+P_DIR = "./results/<language>";
 
 count = 1;
 for nm=0:NM-1
@@ -62,18 +62,13 @@ for nm=0:NM-1
     for i=[0, num_files - 1]
         P_FILE = P_DIR_SUB + "/pdf_" + num2str(i) + ".txt";
 
-        [x_gbees, P_gbees, n_gbees, t_gbees(count)] = parse_nongaussian_txt(P_FILE, prop);
-
-        xest_gbees{count} = zeros(size(x_gbees(1,:)));
-        for j=1:n_gbees
-            xest_gbees{count} = xest_gbees{count}+x_gbees(j,:).*P_gbees(j);
-        end
+        [x_gbees, P_gbees, ~, ~] = parse_nongaussian_txt(P_FILE, prop);
 
         nexttile(1); 
-        plot_nongaussian_surface(x_gbees(:,1:3),P_gbees,[normpdf(1)/normpdf(0), normpdf(2)/normpdf(0), normpdf(3)/normpdf(0)],p);
+        plot_nongaussian_surface(x_gbees(:,1:3), P_gbees, 'p', p);
         drawnow; 
         nexttile(2); 
-        plot_nongaussian_surface(x_gbees(:,4:6),P_gbees,[normpdf(1)/normpdf(0), normpdf(2)/normpdf(0), normpdf(3)/normpdf(0)], p);
+        plot_nongaussian_surface(x_gbees(:,4:6), P_gbees, 'p', p);
         drawnow; 
         count = count + 1;
     end
@@ -85,7 +80,7 @@ L{1} = "Europa\,\,\,";
 LH(2) = plot(NaN,NaN,"k-", "LineWidth",1);
 L{2} = "Nominal\,\,\,";
 LH(3) = fill(nan, nan, nan, "FaceAlpha", 0.7, "FaceColor", 'b', "EdgeColor", "none");
-L{3} = "$p_\mathbf{x}(\mathbf{x}',t_{0+})\,\,\,$";
+L{3} = "$p(\mathbf{x},t = [0,12 \text{ hours}])\,\,\,$";
 leg = legend(gca, LH, L, "Orientation", "Horizontal", "Position", [0.374216319492885, 0.01, 0.25156736101423, 0.075739644688262], "FontSize", 18, "FontName", "times", "Interpreter", "latex");
 leg.Layout.Tile = "south";
 drawnow; 

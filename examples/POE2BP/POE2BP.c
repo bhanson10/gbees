@@ -5,7 +5,7 @@
 #include "POE2BP.h"
 
 // This function defines the dynamics model - required
-void POE2BP(double* f, double* x, double t, double* dx, double* coef){
+void POE2BP(double* f, double* x, double t, double* coef){
     f[0] = 0;
     f[1] = pow(coef[0], 2.0) / pow(x[0], 3.0); 
 }
@@ -23,10 +23,8 @@ int main(void){
     //========================================== Read in user inputs ===========================================//
     printf("Reading in user inputs...\n\n");
 
-    double dx[DIM_f];                                   // Grid width, default is half of the std. dev. from the initial measurement 
-    dx[0] = pow(M.cov[0][0],0.5)/8;                     // dL
-    dx[1] = pow(M.cov[1][1],0.5)/5;                     // dl
-    Grid G = Grid_create(DIM_f, 0.0, 1E-9, M.mean, dx); // Inputs: (dimension, initial time, probability threshold, center, grid width)       
+    double factor[DIM_f] = {4.0, 2.5};
+    Grid G = Grid_create(DIM_f, 0.0, 1E-9, M, factor); // Inputs: (dimension, initial time, probability threshold, measure, grid width factor)       
 
     double coef[] = {19.910350621818949};          // POE2BP trajectory attributes (mu)
     Traj T = Traj_create(1, coef);                 // Inputs: (# of coefficients, coefficients)

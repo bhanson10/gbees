@@ -27,8 +27,8 @@ plot3(x(t > 1,1),x(t > 1,2),x(t > 1,3),'k-','linewidth',2,'DisplayName','Nominal
 
 %% GBEES
 NM = 2; 
-p.color = "cyan"; p.alpha = [0.3, 0.5, 0.7]; 
-P_DIR = "./results/<language>";
+p.color = "cyan"; p.type = "grid"; 
+P_DIR = "./results/c";
 
 count = 1;
 for nm=0:NM-1
@@ -49,17 +49,17 @@ for nm=0:NM-1
         
         if nm == 0
             nexttile(1); 
-            plot_nongaussian_surface(x_gbees,P_gbees,[normpdf(1)/normpdf(0), normpdf(2)/normpdf(0), normpdf(3)/normpdf(0)],p);
+            plot_nongaussian_surface(x_gbees, P_gbees, 'p', p); 
             if i == num_files-1
                 nexttile(2); 
-                plot_nongaussian_surface(x_gbees,P_gbees,[normpdf(1)/normpdf(0), normpdf(2)/normpdf(0), normpdf(3)/normpdf(0)],p);
+                plot_nongaussian_surface(x_gbees, P_gbees, 'p', p); 
             end
         elseif nm == 1
             nexttile(2);  
-            plot_nongaussian_surface(x_gbees,P_gbees,[normpdf(1)/normpdf(0), normpdf(2)/normpdf(0), normpdf(3)/normpdf(0)], p);
+            plot_nongaussian_surface(x_gbees, P_gbees, 'p', p); 
             if i == 0
                 nexttile(1); 
-                plot_nongaussian_surface(x_gbees,P_gbees,[normpdf(1)/normpdf(0), normpdf(2)/normpdf(0), normpdf(3)/normpdf(0)],p);
+                plot_nongaussian_surface(x_gbees, P_gbees, 'p', p); 
             end
         end
         drawnow; 
@@ -71,9 +71,9 @@ end
 
 clear L; clear LH; 
 LH(1) = fill(nan, nan, nan, 'FaceAlpha', 0.7, 'FaceColor', 'cyan', 'EdgeColor', 'none');
-L{1} = "$p(\mathbf{x}, t = [0,1^{\pm}])\,\,\,$";
+L{1} = "$p(\mathbf{x}, t = [0,1^{-}])\,\,\,$";
 LH(2) = fill(nan, nan, nan, 'FaceAlpha', 0.7, 'FaceColor', 'magenta', 'EdgeColor', 'none');
-L{2} = "$p(\mathbf{x}, t = [1^{\pm},2])\,\,\,$";
+L{2} = "$p(\mathbf{x}, t = [1^{+},2])\,\,\,$";
 leg = legend(LH, L, 'Orientation', 'Horizontal', 'FontSize', 18, 'FontName', 'times', 'Interpreter', 'latex');
 leg.Layout.Tile = 'south';
 drawnow; 
@@ -125,18 +125,11 @@ function initialize_figures()
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function [x, P, n, t] = parse_nongaussian_txt(filename)
-    fileID = fopen(filename, 'r'); t = str2double(fgetl(fileID));
-    
-    count = 1; 
-    while ~feof(fileID)
-        line = split(fgetl(fileID)); % Read a line as a string
-        P(count,1) = str2double(line{1});
-        x(count, :) = [str2double(line{2});str2double(line{3});str2double(line{4})];
-        count = count + 1; 
-    end
-    
-    % Close the file
+    fileID = fopen(filename, 'r');
+    data = textscan(fileID, '%s', 'Delimiter', '\n'); data = data{1};
+    t = str2num(data{1}); data = data(2:end); 
+    pdf = cellfun(@(x) str2num(x), data, 'UniformOutput', false); pdf = cell2mat(pdf); 
+    P = pdf(:,1); x = pdf(:,2:4); n = size(P, 1);
     fclose(fileID);
-    n = length(P); 
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
