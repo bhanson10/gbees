@@ -7,9 +7,9 @@ CC=gcc
 #CFLAGS=-pedantic -Wall -std=c99 -D_GNU_SOURCE -static -g
 
 # RELEASE
-CFLAGS=-pedantic -Wall -std=c99 -D_GNU_SOURCE -fPIC -I/opt/homebrew/opt/lapack/include 
+CFLAGS=-pedantic -Wall -std=c99 -D_GNU_SOURCE -fPIC -I<path_to_lapack_include> 
 
-LDFLAGS=-L/opt/homebrew/opt/lapack/lib -L/opt/homebrew/opt/openblas/lib
+LDFLAGS=-L<path_to_lapack_lib>  -L<path_to_openblas_include> 
 LDLIBS=-lm -llapack -lopenblas
 
 SRCS = $(wildcard *.c) $(wildcard ../../*.c)
