@@ -31,7 +31,7 @@ end
 
 count = 1; 
 p1.type = "line"; p1.color = "r"; p1.display = 0; p1.name = "$3\sigma$";
-p2.name = "GBEES"; aR = 5; 
+p2.type = "curve"; p2.name = "GBEES"; aR = 5; 
 for i = 1:size(x_mc_1, 2)
     nexttile(count); title(num2str(5 * (i-1)) + " orbits", 'FontSize', 18, 'FontName', 'Times'); 
     if i ~= 1, xlim([-2, 2]); ylim([-2e-4, 1e-4]); else, xlim([-0.03, 0.03]); ylim([-8e-4, 8e-4]); end
@@ -55,7 +55,7 @@ for i = 1:size(x_mc_1, 2)
     % GBEES
     nexttile(count + 5); 
     if i ~= 1, xlim([-2, 2]); ylim([-2e-4, 1e-4]); else, xlim([-0.03, 0.03]); ylim([-8e-4, 8e-4]); end
-    P_FILE = "./results/c/P0/pdf_" + num2str(i - 1) + ".txt";
+    P_FILE = "./results/<language>/P0/pdf_" + num2str(i - 1) + ".txt";
     [x_gbees, P_gbees, n_gbees, ~] = parse_nongaussian_txt(P_FILE);
     Nx = size(unique(x_gbees(:,1)),1); Ny = size(unique(x_gbees(:,2)),1);
     x_gbees = (x_gbees - xi) * R; 

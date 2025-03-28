@@ -28,7 +28,7 @@ plot3(x(t > 1,1),x(t > 1,2),x(t > 1,3),'k-','linewidth',2,'DisplayName','Nominal
 %% GBEES
 NM = 2; 
 p.color = "cyan"; p.type = "grid"; 
-P_DIR = "./results/c";
+P_DIR = "./results/<language>";
 
 count = 1;
 for nm=0:NM-1

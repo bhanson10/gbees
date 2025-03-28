@@ -63,7 +63,7 @@ end
 %% GBEES
 NM = 1; 
 p.color = "cyan"; p.type = "grid"; 
-P_DIR = "./results/gbees/c";
+P_DIR = "./results/gbees/<language>";
 
 count = 1;
 for nm=0:NM-1
