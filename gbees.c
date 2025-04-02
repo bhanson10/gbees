@@ -102,8 +102,8 @@ Grid Grid_create(int dim, double t0, double thresh, Meas M, double* factor){
     G.t = t0; 
     G.dt = DBL_MAX; 
     G.center = malloc(dim * sizeof(double));
-    G.dx = malloc(dim * sizeof(double*));
-    G.factor = malloc(dim * sizeof(double*));
+    G.dx = malloc(dim * sizeof(double));
+    G.factor = malloc(dim * sizeof(double));
     if (G.center == NULL || G.dx == NULL || G.factor == NULL){
         const char* error_string = "grid creation"; 
         exit_nomem(error_string); 
@@ -183,6 +183,7 @@ void Grid_free(Grid* G) {
     // Free the allocated memory
     free(G->center);
     free(G->dx);
+    free(G->factor);
     for (int i = 0; i < G->dim; i++){
         free(G->R[i]); free(G->Rt[i]);
     }
@@ -191,6 +192,7 @@ void Grid_free(Grid* G) {
     // Set pointers to NULL to avoid dangling pointers
     G->center = NULL;
     G->dx = NULL;
+    G->factor = NULL;
     G->R = NULL;
     G->Rt = NULL;
     return; 
@@ -705,12 +707,15 @@ void initialize_adv(void (*f)(double*, double*, double, double*), HashTable* P, 
                     for(int i = 0; i < G->dim; i++){
                         memcpy(xk, x, G->dim * sizeof(double));
                         xk[i] += G->dx[i] / 2; 
-                        xR = matrix_vector_multiply(G->dim, G->dim, G->R, xk); // B.L.H. 
+                        xR = matrix_vector_multiply(G->dim, G->dim, G->R, xk); 
                         for(int j = 0; j < G->dim; j++) xR[j] += G->center[j];
                         (*f)(advR, xR, G->t, T.coef);
-                        adv = matrix_vector_multiply(G->dim, G->dim, G->Rt, advR); // B.L.H. 
+                        adv = matrix_vector_multiply(G->dim, G->dim, G->Rt, advR); 
                         last->v[i] = adv[i];
                         sum += fabs(last->v[i]) / G->dx[i];
+
+                        free(xR);  
+                        free(adv);
                     }
                     last->new_f = 1;
                     last->cfl_dt = 1.0/sum;
@@ -758,6 +763,8 @@ void recursive_loop(HashTable* P, Grid* G, Meas M, Traj T, int level, int* curre
         for(int j = 0; j < G->dim; j++) current_state_vecR[j] += G->center[j];
         double prob = gauss_probability(M.dim, current_state_vecR, M);
         HashTable_insert(P, G, T, current_state, prob, BOUNDS, BOUND_f);
+
+        free(current_state_vecR);
         return;
     }
 
@@ -877,6 +884,7 @@ void write_cells(FILE* myfile, HashTable* P, Grid G){
                         fprintf(myfile, " %.10e", xR[i]);
                     }
                     fprintf(myfile, "\n");
+                    free(xR); 
                 }
                 last = last->next; 
             }
@@ -1320,7 +1328,7 @@ void meas_up_recursive(void (*h)(double*, double*, double, double*), HashTable* 
                     x[i] = G.dx[i]*last->state[i];
                 }
 
-                double* xR = matrix_vector_multiply(G.dim, G.dim, G.R, x); // B.L.H.
+                double* xR = matrix_vector_multiply(G.dim, G.dim, G.R, x); 
                 for(int i = 0; i < G.dim; i++) xR[i] += G.center[i];
                 double y[M.dim];
                 (*h)(y, xR, G.t, T.coef); 
@@ -1328,6 +1336,8 @@ void meas_up_recursive(void (*h)(double*, double*, double, double*), HashTable* 
                 double prob = gauss_probability(M.dim, y, M);   
                 last->prob *= prob;
                 last = last->next; 
+
+                free(xR); 
             }
         }
     }
