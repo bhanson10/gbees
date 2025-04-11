@@ -26,22 +26,22 @@ M = gbees.Meas_create(DIM_f, M_DIR, M_FILE)
 print("Reading in user inputs...\n")
 
 factor = [4.0, 2.5]
-G = gbees.Grid_create(DIM_f, 0.0, 1E-9, M, factor) # Inputs: (dimension, initial time, probability threshold, measure, grid width factor)    
+G = gbees.Grid_create(DIM_f, 0.0, 1E-9, M, factor, False) # Inputs: (dimension, initial time, probability threshold, measure, grid width factor, rotate grid)    
 
-coef = [19.910350621818949]                        # POE2BP trajectory attributes (mu)
-T = gbees.Traj_create(len(coef), coef)             # Inputs: (# of coefficients, coefficients)
+coef = [19.910350621818949]                               # POE2BP trajectory attributes (mu)
+T = gbees.Traj_create(len(coef), coef)                    # Inputs: (# of coefficients, coefficients)
 
-NUM_DIST = 5                                       # Number of distributions recorded per measurement
-NUM_MEAS = 1                                       # Number of measurements
-DEL_STEP = 20                                      # Number of steps per deletion procedure
-OUTPUT_FREQ = 20                                   # Number of steps per output to terminal
-CAPACITY = int(2**13);                             # Size of hash table (power of 2 for optimal hashing)
-OUTPUT = False                                     # Write info to terminal
-RECORD = True                                      # Write PDFs to .txt file
-MEASURE = False                                    # Take discrete measurement updates
-BOUNDS = False                                     # Add inadmissible regions to grid
-COLLISIONS = False;                                # Track collisions
-TV = False;                                        # Time-invariant dynamics 
+NUM_DIST = 5                                              # Number of distributions recorded per measurement
+NUM_MEAS = 1                                              # Number of measurements
+DEL_STEP = 20                                             # Number of steps per deletion procedure
+OUTPUT_FREQ = 20                                          # Number of steps per output to terminal
+CAPACITY = int(2**13);                                    # Size of hash table (power of 2 for optimal hashing)
+OUTPUT = False                                            # Write info to terminal
+RECORD = True                                             # Write PDFs to .txt file
+MEASURE = False                                           # Take discrete measurement updates
+BOUNDS = False                                            # Add inadmissible regions to grid
+COLLISIONS = False;                                       # Track collisions
+TV = False;                                               # Time-invariant dynamics 
 #============================================================================================================#
 
 #================================================== GBEES ===================================================#

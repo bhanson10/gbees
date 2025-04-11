@@ -28,22 +28,22 @@ int main(void){
     printf("Reading in user inputs...\n\n");
 
     double factor[DIM_f] = {1.0, 1.0, 1.0, 1.0, 1.0, 1.0};              
-    Grid G = Grid_create(DIM_f, 0.0, 1E-8, M, factor); // Inputs: (dimension, initial time, probability threshold, measure, grid width factor)       
-
-    double coef[] = {4.0};                             // Lorenz6D trajectory attributes (F)
-    Traj T = Traj_create(1, coef);                     // Inputs: (# of coefficients, coefficients)
+    Grid G = Grid_create(DIM_f, 0.0, 1E-8, M, factor, false); // Inputs: (dimension, initial time, probability threshold, measure, grid width factor, rotate grid)       
   
-    int NUM_DIST = 2;                                  // Number of distributions recorded per measurement
-    int NUM_MEAS = 1;                                  // Number of measurements
-    int DEL_STEP = 20;                                 // Number of steps per deletion procedure
-    int OUTPUT_FREQ = 20;                              // Number of steps per output to terminal
-    int CAPACITY = (int)pow(2,26);                     // Size of hash table (power of 2 for optimal hashing)
-    bool OUTPUT = true;                                // Write info to terminal
-    bool RECORD = true;                                // Write PDFs to .txt file
-    bool MEASURE = false;                              // Take discrete measurement updates
-    bool BOUNDS = false;                               // Add inadmissible regions to grid
-    bool COLLISIONS = false;                           // Track collisions
-    bool TV = false;                                   // Time-invariant dynamics 
+    double coef[] = {4.0};                                    // Lorenz6D trajectory attributes (F)
+    Traj T = Traj_create(1, coef);                            // Inputs: (# of coefficients, coefficients)
+  
+    int NUM_DIST = 2;                                         // Number of distributions recorded per measurement
+    int NUM_MEAS = 1;                                         // Number of measurements
+    int DEL_STEP = 20;                                        // Number of steps per deletion procedure
+    int OUTPUT_FREQ = 20;                                     // Number of steps per output to terminal
+    int CAPACITY = (int)pow(2,26);                            // Size of hash table (power of 2 for optimal hashing)
+    bool OUTPUT = true;                                       // Write info to terminal
+    bool RECORD = true;                                       // Write PDFs to .txt file
+    bool MEASURE = false;                                     // Take discrete measurement updates
+    bool BOUNDS = false;                                      // Add inadmissible regions to grid
+    bool COLLISIONS = false;                                  // Track collisions
+    bool TV = false;                                          // Time-invariant dynamics 
     //==========================================================================================================//
 
     //================================================= GBEES ==================================================//
