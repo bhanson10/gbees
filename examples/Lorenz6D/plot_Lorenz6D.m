@@ -214,7 +214,7 @@ function [x, P, n, t] = parse_nongaussian_txt(filename)
     data = textscan(fileID, '%s', 'Delimiter', '\n'); data = data{1};
     t = str2num(data{1}); data = data(2:end); 
     pdf = cellfun(@(x) str2num(x), data, 'UniformOutput', false); pdf = cell2mat(pdf); 
-    P = pdf(:,1); x = pdf(:,2:7); n = size(P, 1);
+    P = pdf(:,1); x = pdf(:,2:end); n = size(P, 1);
     fclose(fileID);
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

@@ -91,19 +91,12 @@ function xk = CR3BP(t, x, prop)
     xk = [x(4); x(5); x(6); 2*x(5)+x(1)-(prop.mu*(x(1)-1+prop.mu)/(((x(1)-1+prop.mu)^2+x(2)^2+x(3)^2)^(1.5)))-((1-prop.mu)*(x(1)+prop.mu)/(((x(1)+prop.mu)^2+x(2)^2+x(3)^2)^(1.5))); -2*x(4)+x(2)-(prop.mu*x(2)/(((x(1)-1+prop.mu)^2+x(2)^2+x(3)^2)^(1.5)))-((1-prop.mu)*x(2)/(((x(1)+prop.mu)^2+x(2)^2+x(3)^2)^(1.5))); -(prop.mu*x(3)/(((x(1)-1+prop.mu)^2+x(2)^2+x(3)^2)^(1.5)))-((1-prop.mu)*x(3)/(((x(1)+prop.mu)^2+x(2)^2+x(3)^2)^(1.5)))];
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function [x, P, n, t] = parse_nongaussian_txt(filename, prop)
-    fileID = fopen(filename, 'r'); t = str2double(fgetl(fileID));
-    
-    count = 1; 
-    while ~feof(fileID)
-        line = split(fgetl(fileID)); % Read a line as a string
-        P(count,1) = str2double(line{1});
-        x(count, :) = [str2double(line{2});str2double(line{3});str2double(line{4});str2double(line{5});str2double(line{6});str2double(line{7})].*prop.U';
-        count = count + 1; 
-    end
-    
-    % Close the file
+function [x, P, n, t] = parse_nongaussian_txt(filename)
+    fileID = fopen(filename, 'r');
+    data = textscan(fileID, '%s', 'Delimiter', '\n'); data = data{1};
+    t = str2num(data{1}); data = data(2:end); 
+    pdf = cellfun(@(x) str2num(x), data, 'UniformOutput', false); pdf = cell2mat(pdf); 
+    P = pdf(:,1); x = pdf(:,2:end).*prop.U; n = size(P, 1);
     fclose(fileID);
-    n = length(P); 
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
