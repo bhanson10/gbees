@@ -95,7 +95,7 @@ void Meas_free(Meas* M) {
     return; 
 }
 
-Grid Grid_create(int dim, double t0, double thresh, Meas M, double* factor){
+Grid Grid_create(int dim, double t0, double thresh, Meas M, double* factor, bool ROTATE){
     Grid G; 
     G.dim = dim; 
     G.thresh = thresh; 
@@ -123,13 +123,6 @@ Grid Grid_create(int dim, double t0, double thresh, Meas M, double* factor){
         }
     }
 
-    double eigvals[dim]; // Array to hold eigenvalues
-    int lda = dim;       // Leading dimension of the matrix
-    int info;            // LAPACK info code
-    info = LAPACKE_dsyev(LAPACK_COL_MAJOR, 'V', 'U', dim, A, lda, eigvals);
-    if (info != 0) {
-        perror("LAPACK failed to compute eigenvalues.\n");
-    }
 
     G.R = (double**)malloc(dim * sizeof(double*));
     G.Rt = (double**)malloc(dim * sizeof(double*));
@@ -146,34 +139,61 @@ Grid Grid_create(int dim, double t0, double thresh, Meas M, double* factor){
         }
     }
 
-    for (int i = 0; i < dim; i++) {
-        for (int j = 0; j < dim; j++) {
-            G.R[i][j]  = A[j * dim + i];
-            G.Rt[j][i] = A[j * dim + i];
+    if(ROTATE){
+        double eigvals[dim]; // Array to hold eigenvalues
+        int lda = dim;       // Leading dimension of the matrix
+        int info;            // LAPACK info code
+        info = LAPACKE_dsyev(LAPACK_COL_MAJOR, 'V', 'U', dim, A, lda, eigvals);
+        if (info != 0) {
+            perror("LAPACK failed to compute eigenvalues.\n");
         }
-    }
 
-    // Calculating dx based on new rotated grid
-    double RtCov[G.dim][G.dim];
-    for (int i = 0; i < G.dim; i++) {
-        for (int j = 0; j < G.dim; j++) {
-            RtCov[i][j] = 0;
-            for (int k = 0; k < G.dim; k++) {
-                RtCov[i][j] += G.Rt[i][k] * M.cov[k][j];
+        for (int i = 0; i < dim; i++) {
+            for (int j = 0; j < dim; j++) {
+                G.R[i][j]  = A[j * dim + i];
+                G.Rt[j][i] = A[j * dim + i];
             }
         }
-    }
-    double RtCovR[G.dim][G.dim];
-    for (int i = 0; i < G.dim; i++) {
-        for (int j = 0; j < G.dim; j++) {
-            RtCovR[i][j] = 0;
-            for (int k = 0; k < G.dim; k++) {
-                RtCovR[i][j] += RtCov[i][k] * G.R[k][j];
+
+        // Calculating dx based on new rotated grid
+        double RtCov[G.dim][G.dim];
+        for (int i = 0; i < G.dim; i++) {
+            for (int j = 0; j < G.dim; j++) {
+                RtCov[i][j] = 0;
+                for (int k = 0; k < G.dim; k++) {
+                    RtCov[i][j] += G.Rt[i][k] * M.cov[k][j];
+                }
             }
         }
-    }
-    for(int i = 0; i < G.dim; i++){
-        G.dx[i] = sqrt(RtCovR[i][i]) / (2.0 * G.factor[i]); 
+        double RtCovR[G.dim][G.dim];
+        for (int i = 0; i < G.dim; i++) {
+            for (int j = 0; j < G.dim; j++) {
+                RtCovR[i][j] = 0;
+                for (int k = 0; k < G.dim; k++) {
+                    RtCovR[i][j] += RtCov[i][k] * G.R[k][j];
+                }
+            }
+        }
+        for(int i = 0; i < G.dim; i++){
+            G.dx[i] = sqrt(RtCovR[i][i]) / (2.0 * G.factor[i]); 
+        }
+    }else{
+        for (int i = 0; i < dim; i++) {
+            for (int j = 0; j < dim; j++){
+                if(i == j){
+                    G.R[i][j]  = 1;
+                    G.Rt[i][j] = 1;
+                }else{
+                    G.R[i][j]  = 0;
+                    G.Rt[i][j] = 0;
+                }
+            }
+        }
+
+        // Calculating dx based on original measurement covariance grid
+        for(int i = 0; i < G.dim; i++){
+            G.dx[i] = sqrt(M.cov[i][i]) / (2.0 * G.factor[i]); 
+        }
     }
 
     return G;
@@ -1371,7 +1391,7 @@ void record_collisions(HashTable* P, const char* FILE_NAME){
 
 void run_gbees(void (*f)(double*, double*, double, double*), void (*h)(double*, double*, double, double*), double (*BOUND_f)(double*, double*), Grid G, Meas M, Traj T, char* P_DIR, char* M_DIR, int NUM_DIST, int NUM_MEAS, int DEL_STEP, int OUTPUT_FREQ, int CAPACITY, int DIM_h, bool OUTPUT, bool RECORD, bool MEASURE, bool BOUNDS, bool COLLISIONS, bool TV){
     char* P_PATH; char* C_PATH; 
-    double RECORD_TIME = M.T/(NUM_DIST-1);      
+    double RECORD_TIME;      
 
     HashTable* P = HashTable_create(CAPACITY); 
 
@@ -1384,17 +1404,16 @@ void run_gbees(void (*f)(double*, double*, double, double*), void (*h)(double*, 
     printf("Entering time marching...\n\n");
 
     clock_t start = clock(); 
-    double tt = 0;
     for(int nm = 0; nm < NUM_MEAS; nm++){
-        printf("Timestep: %d-0, Program time: %f s, Sim. time: %f", nm, ((double)(clock()-start))/CLOCKS_PER_SEC, tt); 
+        printf("Timestep: %d-0, Program time: %f s, Sim. time: %f", nm, ((double)(clock()-start))/CLOCKS_PER_SEC, G.t); 
         printf(" TU, Active/Total Cells: %zu/%zu\n", P->a_count, P->tot_count); 
-        if(RECORD){P_PATH = concat_file(P_DIR, "/P", nm, "/pdf_", 0); record_pdf(P, P_PATH, G, tt); free(P_PATH);};
+        if(RECORD){P_PATH = concat_file(P_DIR, "/P", nm, "/pdf_", 0); record_pdf(P, P_PATH, G, G.t); free(P_PATH);};
         if(COLLISIONS){C_PATH = concat_file(P_DIR, "/C", nm, "/c_", 0); record_collisions(P, C_PATH); free(C_PATH);}
 
         double mt = 0; int record_count = 1; int step_count = 1; double rt; 
         while(fabs(mt - M.T) > TOL) { // time between discrete measurements
 
-            rt = 0;
+            rt = 0; RECORD_TIME = M.T/(NUM_DIST-1);      
             while (rt < RECORD_TIME) { // time between PDF recordings
 
                 grow_tree(f, P, G, T, TV, BOUNDS, BOUND_f);
@@ -1411,7 +1430,7 @@ void run_gbees(void (*f)(double*, double*, double, double*), void (*h)(double*, 
                 }
 
                 if ((OUTPUT) && (step_count % OUTPUT_FREQ == 0)) { // print size to terminal
-                    printf("Timestep: %d-%d, Program time: %f s, Sim. time: %f", nm, step_count, ((double)(clock()-start))/CLOCKS_PER_SEC, tt + mt + rt); 
+                    printf("Timestep: %d-%d, Program time: %f s, Sim. time: %f", nm, step_count, ((double)(clock()-start))/CLOCKS_PER_SEC, G.t); 
                     printf(" TU, Active/Total Cells: %zu/%zu\n", P->a_count, P->tot_count); 
                 }
 
@@ -1421,13 +1440,13 @@ void run_gbees(void (*f)(double*, double*, double, double*), void (*h)(double*, 
             }
             
             if (((step_count-1) % OUTPUT_FREQ != 0)||(!OUTPUT)){ // print size to terminal  
-                printf("Timestep: %d-%d, Program time: %f s, Sim. time: %f", nm, step_count - 1, ((double)(clock()-start))/CLOCKS_PER_SEC, tt + mt + rt); 
+                printf("Timestep: %d-%d, Program time: %f s, Sim. time: %f", nm, step_count - 1, ((double)(clock()-start))/CLOCKS_PER_SEC, G.t); 
                 printf(" TU, Active/Total Cells: %zu/%zu\n", P->a_count, P->tot_count); 
             }
             
             if (RECORD) { // record PDF
                 P_PATH = concat_file(P_DIR, "/P", nm, "/pdf_", record_count); 
-                record_pdf(P, P_PATH, G, tt + mt + rt);
+                record_pdf(P, P_PATH, G, G.t);
                 record_count += 1;
                 free(P_PATH);
             }
@@ -1442,10 +1461,9 @@ void run_gbees(void (*f)(double*, double*, double, double*), void (*h)(double*, 
             mt += rt;
         }
 
-        tt += mt;
         if ((MEASURE) && (nm < NUM_MEAS - 1)) { // peform discrete measurement update
 
-            printf("\nPERFORMING BAYESIAN UPDATE AT: %f TU...\n\n", tt);
+            printf("\nPERFORMING BAYESIAN UPDATE AT: %f TU...\n\n", G.t);
 
             // freeing previous measurement 
             Meas_free(&M);                                                    

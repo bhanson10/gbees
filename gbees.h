@@ -37,7 +37,7 @@ typedef struct Grid {
     double lo_bound;
 } Grid;
 
-Grid Grid_create(int dim, double t0, double thresh, Meas M, double* factor);
+Grid Grid_create(int dim, double t0, double thresh, Meas M, double* factor, bool ROTATE);
 
 void Grid_free(Grid* G);
 
