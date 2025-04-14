@@ -83,9 +83,9 @@ for nm=0:NM-1
         Pv_full = accumarray(v_idx, P_gbees, [], @sum);
 
         nexttile(1); 
-        plot_nongaussian_surface_2(x_list, Px_full, 'p', p);
+        plot_nongaussian_surface(x_list, Px_full, 'p', p);
         nexttile(2); 
-        plot_nongaussian_surface_2(v_list, Pv_full, 'p', p);
+        plot_nongaussian_surface(v_list, Pv_full, 'p', p);
         drawnow; 
         
         count = count + 1;

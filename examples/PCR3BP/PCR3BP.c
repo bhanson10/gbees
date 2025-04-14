@@ -1,7 +1,7 @@
 // PCR3BP.c, https://github.com/bhanson10/gbees/tree/main/examples/PCR3BP
 // Copyright 2024 by Benjamin Hanson, published under BSD 3-Clause License.
 
-#include "../../gbees.h" // REF- do not include c files
+#include "../../gbees.h" 
 #include "PCR3BP.h"
 
 // This function defines the dynamics model - required
@@ -58,7 +58,7 @@ int main(void){
     bool MEASURE = true;                                      // Take discrete measurement updates
     bool BOUNDS = true;                                       // Add inadmissible regions to grid
     bool COLLISIONS = false;                                  // Track collisions
-    bool TV = false;                                         // Time-invariant dynamics 
+    bool TV = false;                                          // Time-invariant dynamics 
     //==========================================================================================================//
 
     //================================================= GBEES ==================================================//
