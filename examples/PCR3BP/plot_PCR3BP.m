@@ -18,8 +18,8 @@ axis("equal")
 set(gca, 'FontName', 'Times', 'FontSize', 14);
 xlabel("synodic $x$ (km)", "Interpreter","latex")
 ylabel("synodic $y$ (km)", "Interpreter","latex")
-europa = nsidedpoly(1000, 'Center', [(1-prop.mu)*prop.LU, 0], 'Radius', prop.sec_r);
-plot(europa, 'FaceColor', 'm', 'EdgeColor','none');
+enceladus = nsidedpoly(1000, 'Center', [(1-prop.mu)*prop.LU, 0], 'Radius', prop.sec_r);
+plot(enceladus, 'FaceColor', [0.3, 0.3, 0.3], 'EdgeColor','none');
 
 nexttile(2); hold on; 
 axis("equal")
@@ -102,7 +102,7 @@ plot_nongaussian_surface(x_gbees(:,3:4),P_gbees,[normpdf(1)/normpdf(0), normpdf(
 drawnow; 
 
 clear L; clear LH; 
-LH(1) = plot(NaN,NaN,'o','MarkerSize', 10, 'MarkerFaceColor',[1,167/255,254/255],'MarkerEdgeColor','none');
+LH(1) = plot(NaN,NaN,'o','MarkerSize', 10, 'MarkerFaceColor',[0.5, 0.5, 0.5],'MarkerEdgeColor','none');
 L{1} = "Enceladus\,\,\,";
 LH(2) = plot(NaN,NaN,'k-', 'LineWidth',1);
 L{2} = "Nominal\,\,\,";
