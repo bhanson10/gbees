@@ -18,17 +18,6 @@ for i = 1:N
     end
 end
 
-P0 = [0.06243 0.0000000; 0.0000000 3.0461E-8];  
-X0 = mvnrnd(x0, P0, N); t = linspace(0, 32.242, 5); 
-x_mc_2 = zeros(N, size(t,2), 2);
-for i = 1:N
-    [~, X] = ode45(@(t, x) R2BP(t, x), t, X0(i, :)');
-    
-    for j = 1:5
-        x_mc_2(i, j, :) = X(j, :);
-    end
-end
-
 count = 1; 
 p1.type = "line"; p1.color = "r"; p1.display = 0; p1.name = "$3\sigma$";
 p2.type = "curve"; p2.name = "GBEES"; aR = 5; 
@@ -49,7 +38,7 @@ for i = 1:size(x_mc_1, 2)
     [Vi, Di] = eig(Pi); R = Vi * [0 1; -1 0];
     x_mc = (x_mc - xi) * R;
     scatter(x_mc(:, 1), x_mc(:, 2), 20, "r", "Marker", "x", "DisplayName", "MC {     }");   
-    plot_gaussian_ellipsoid([0; 0], R * Pi * R', 3, p1);
+    plot_gaussian_ellipsoid([0; 0], R * Pi * R', 'sd', 3, 'p', p1);
     
     
     % GBEES
@@ -59,8 +48,8 @@ for i = 1:size(x_mc_1, 2)
     [x_gbees, P_gbees, n_gbees, ~] = parse_nongaussian_txt(P_FILE);
     Nx = size(unique(x_gbees(:,1)),1); Ny = size(unique(x_gbees(:,2)),1);
     x_gbees = (x_gbees - xi) * R; 
-    plot_nongaussian_surface_2(x_gbees, P_gbees, 'p', p2, 'aR', aR); 
-    plot_gaussian_ellipsoid([0; 0], R * Pi * R', 3, p1);
+    plot_nongaussian_surface(x_gbees, P_gbees, 'p', p2, 'aR', aR); 
+    plot_gaussian_ellipsoid([0; 0], R * Pi * R', 'sd', 3, 'p', p1);
 
     count = count + 1; 
 end
@@ -68,8 +57,6 @@ end
 %                              FUNCTIONS                                  %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function initialize_figures()
-
-    cmap = jet; bg = cmap(1, :); 
 
     f1 = figure(1); clf; hold on; f1.Position = [32,158,1461,552];
     tiledlayout(2, 5, 'TileSpacing','compact');
