@@ -14,7 +14,7 @@ int main(void){
     //=================================== Read in initial discrete measurement =================================//
     printf("Reading in initial discrete measurement...\n\n");
 
-    char* P_DIR = "./results/mov";       // Saved PDFs path
+    char* P_DIR = "./results/c";       // Saved PDFs path
     char* M_DIR = "./measurements";    // Measurement path
     char* M_FILE = "measurement0.txt"; // Measurement file
     Meas M = Meas_create(DIM_f, M_DIR, M_FILE);
@@ -29,7 +29,7 @@ int main(void){
     double coef[] = {19.910350621818949};                     // POE2BP trajectory attributes (mu)
     Traj T = Traj_create(1, coef);                            // Inputs: (# of coefficients, coefficients)
 
-    int NUM_DIST = 150;                                       // Number of distributions recorded per measurement
+    int NUM_DIST = 5;                                         // Number of distributions recorded per measurement
     int NUM_MEAS = 1;                                         // Number of measurements
     int DEL_STEP = 20;                                        // Number of steps per deletion procedure
     int OUTPUT_FREQ = 20;                                     // Number of steps per output to terminal
