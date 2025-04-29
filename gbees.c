@@ -821,13 +821,15 @@ void set_bounds(HashTable* P, Grid* G){
     return;
 }
 
-void get_sum(HashTable* P, double* prob_sum){
+void get_sum(HashTable* P, double* prob_sum, Grid* G){
     for(int idx = 0; idx < P->capacity; idx++){
         HashTableEntry* head = P->entries[idx];
         if(head != NULL){
             HashTableEntry* last = head;
             while(last != NULL){
-                *prob_sum += last->prob;
+                if(last->prob >= G->thresh){
+                    *prob_sum += last->prob;
+                }
                 last = last->next;
             }
         }
@@ -841,8 +843,8 @@ void divide_sum(HashTable* P, double prob_sum, Grid* G){
         if(head != NULL){
             HashTableEntry* last = head;
             while(last != NULL){
-                last->prob /= prob_sum; 
                 if(last->prob >= G->thresh){
+                    last->prob /= prob_sum; 
                     P->a_count += 1; 
                 }
                 P->tot_count += 1; 
@@ -856,7 +858,7 @@ void divide_sum(HashTable* P, double prob_sum, Grid* G){
 void normalize_tree(HashTable* P, Grid* G){
     P->a_count = 0; P->tot_count = 0; 
     double prob_sum = 0;
-    get_sum(P, &prob_sum);
+    get_sum(P, &prob_sum, G);
     divide_sum(P, prob_sum, G);
     return; 
 }

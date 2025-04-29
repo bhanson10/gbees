@@ -128,7 +128,7 @@ void initialize_grid(void (*f)(double*, double*, double, double*), HashTable* P,
 
 void set_bounds(HashTable* P, Grid* G);
 
-void get_sum(HashTable* P, double* prob_sum);
+void get_sum(HashTable* P, double* prob_sum, Grid* G);
 
 void divide_sum(HashTable* P, double prob_sum, Grid* G);
 
