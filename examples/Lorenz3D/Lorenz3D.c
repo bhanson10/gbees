@@ -30,7 +30,7 @@ int main(void){
     printf("Reading in user inputs...\n\n");
 
     double factor[DIM_f] = {1.0, 1.0, 1.0}; 
-    Grid G = Grid_create(DIM_f, 0.0, 5E-6, M, factor, false); // Inputs: (dimension, initial time, probability threshold, measurement, grid width factor, rotate grid)       
+    Grid G = Grid_create(DIM_f, 0.0, 1E-7, M, factor, false); // Inputs: (dimension, initial time, probability threshold, measurement, grid width factor, rotate grid)       
 
     double coef[] = {4.0, 1.0, 48.0};                         // Lorenz3D trajectory attributes (sigma, beta, r)
     Traj T = Traj_create(3, coef);                            // Inputs: (# of coefficients, coefficients)
@@ -39,7 +39,7 @@ int main(void){
     int NUM_MEAS = 2;                                         // Number of measurements
     int DEL_STEP = 20;                                        // Number of steps per deletion procedure
     int OUTPUT_FREQ = 20;                                     // Number of steps per output to terminal
-    int CAPACITY = (int)pow(2,10);                            // Size of hash table (power of 2 for optimal hashing)
+    int CAPACITY = (int)pow(2,12);                            // Size of hash table (power of 2 for optimal hashing)
     bool OUTPUT = true;                                       // Write info to terminal
     bool RECORD = true;                                       // Write PDFs to .txt file
     bool MEASURE = true;                                      // Take discrete measurement updates

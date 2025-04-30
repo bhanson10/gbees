@@ -827,9 +827,10 @@ void get_sum(HashTable* P, double* prob_sum, Grid* G){
         if(head != NULL){
             HashTableEntry* last = head;
             while(last != NULL){
-                if(last->prob >= G->thresh){
-                    *prob_sum += last->prob;
-                }
+                *prob_sum += last->prob;
+                // if(last->prob >= G->thresh){
+                //     *prob_sum += last->prob;
+                // }
                 last = last->next;
             }
         }
@@ -843,9 +844,10 @@ void divide_sum(HashTable* P, double prob_sum, Grid* G){
         if(head != NULL){
             HashTableEntry* last = head;
             while(last != NULL){
+                last->prob /= prob_sum; 
                 if(last->prob >= G->thresh){
-                    last->prob /= prob_sum; 
                     P->a_count += 1; 
+                    // last->prob /= prob_sum; 
                 }
                 P->tot_count += 1; 
                 last = last->next; 
