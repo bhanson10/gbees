@@ -63,7 +63,7 @@ end
 %% GBEES
 NM = 1; 
 p.color = "cyan"; p.type = "grid"; 
-P_DIR = "./results/gbees/<language>";
+P_DIR = "./results/gbees/c";
 
 count = 1;
 for nm=0:NM-1
@@ -94,21 +94,6 @@ for nm=0:NM-1
     end
 end
 
-% create video
-% vw0 = [30, 10]; vw = vw0; 
-% nf = 200; 
-% dvw = [360 360] ./ nf; 
-% frames(1) = getframe(gcf); 
-% for i = 1:nf
-%     vw = vw + dvw;
-%     nexttile(1); view(vw(1), vw0(2)); 
-%     nexttile(2); view(vw(1), vw0(2)); 
-%     drawnow; 
-%     pause(0.1); 
-%     frames(i+1) = getframe(gcf); 
-% end
-% create_video(frames,'Lorenz96_animation.mp4', 24)
-
 clear L; clear LH; 
 LH(1) = scatter(nan, nan, 10, 'k', 'filled');
 L{1} = "MC {      }";
@@ -117,6 +102,23 @@ L{2} = "$p(\mathbf{x}, t = [0,1.3])\,\,\,$";
 leg = legend(LH, L, 'Orientation', 'Horizontal', 'FontSize', 18, 'FontName', 'times', 'Interpreter', 'latex');
 leg.Layout.Tile = 'south';
 drawnow; 
+
+% create video
+vw0 = [30, 10]; vw = vw0; 
+nf = 200; 
+dvw = [360 360] ./ nf; 
+frames(1) = getframe(gcf); 
+for i = 1:nf
+    vw = vw + dvw;
+    nexttile(1); view(vw(1), vw0(2)); 
+    nexttile(2); view(vw(1), vw0(2)); 
+    nexttile(3); view(vw(1), vw0(2)); 
+    nexttile(4); view(vw(1), vw0(2)); 
+    drawnow; 
+    pause(0.1); 
+    frames(i+1) = getframe(gcf); 
+end
+create_video(frames,'Lorenz96_mov.mp4', 24)
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                              FUNCTIONS                                  %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -131,7 +133,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function initialize_figures()
 
-    f1 = figure(1); clf; hold on; f1.Position = [100 50 1200 850];
+    f1 = figure(1); clf; hold on; f1.Position = [100 50 1200 850]; f1.Color = "white"; 
     tiledlayout(2, 2, 'TileSpacing','compact');
 
     nexttile(1); hold on; axis normal
@@ -151,7 +153,7 @@ function initialize_figures()
     zticks([-4 -2 0 2 4 6 8])
     zticklabels({'-4','-2','0','2','4', '6', '8'})
     set(gca, 'FontName' , 'Times');
-    text(-13.5, 0, 1, '(a)', 'FontSize', 30, 'FontName', 'times', 'Interpreter', 'latex');
+    % text(-13.5, 0, 1, '(a)', 'FontSize', 30, 'FontName', 'times', 'Interpreter', 'latex');
     
     nexttile(2); hold on; axis normal
     view(30,10); lighting phong; light('Position',[1 -1 1]);
@@ -188,7 +190,7 @@ function initialize_figures()
     zticks([-4 -2 0 2 4 6 8])
     zticklabels({'-4','-2','0','2','4', '6', '8'})
     set(gca, 'FontName' , 'Times');
-    text(-13.5, 0, 1, '(b)', 'FontSize', 30, 'FontName', 'times', 'Interpreter', 'latex');
+    % text(-13.5, 0, 1, '(b)', 'FontSize', 30, 'FontName', 'times', 'Interpreter', 'latex');
     
     nexttile(4); hold on; axis normal 
     view(30,10); lighting phong; light('Position',[1 -1 1]);

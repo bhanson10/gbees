@@ -7,10 +7,10 @@ CC=gcc
 #CFLAGS=-pedantic -Wall -std=c99 -D_GNU_SOURCE -static -g
 
 # RELEASE
-CFLAGS=-pedantic -Wall -std=c99 -D_GNU_SOURCE -fPIC -I<path_to_lapack_include> 
+CFLAGS=-pedantic -Wall -std=c99 -D_GNU_SOURCE -fPIC
 
-LDFLAGS=-L<path_to_lapack_lib>
-LDLIBS=-lm -llapacke
+LDFLAGS=
+LDLIBS=-lm
 
 SRCS = $(wildcard *.c) $(wildcard ../../*.c)
 OBJS = $(SRCS:%.c=%.o)

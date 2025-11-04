@@ -1,0 +1,144 @@
+% plot_Aizawa.m, https://github.com/bhanson10/gbees/tree/main/examples/Aizawa
+% Copyright 2024 by Benjamin Hanson, published under BSD 3-Clause License.
+
+close all; clc; clear all; 
+
+%% initializing system properties
+d = 3; T = 8; coef = [0.95 0.7 0.6 3.5 0.25 0.1];  
+ic = [0.1; 0; 0]; 
+
+%% initializing figure
+initialize_figures(); 
+
+%% truth
+options = odeset('MaxStep', 1E-3, 'InitialStep', 1E-3, 'RelTol', 1e-6);
+[~, x] = ode87(@(t, x) Aizawa(t, x ,coef), [0 50], ic, options);
+
+nexttile(1); 
+plot3(x(:,1), x(:,2), x(:,3), 'g-','linewidth', .5, 'HandleVisibility', 'off'); 
+nexttile(2); 
+plot3(x(:,1), x(:,2), x(:,3), 'g-','linewidth', .5, 'HandleVisibility', 'off'); 
+
+[t, x] = ode87(@(t, x) Aizawa(t, x, coef), [0 T], ic, options);
+nexttile(1); 
+plot3(x(t < T/2,1),x(t < T/2,2),x(t < T/2,3),'k-','linewidth',2,'DisplayName','Nominal'); drawnow;
+nexttile(2); 
+plot3(x(t > T/2,1),x(t > T/2,2),x(t > T/2,3),'k-','linewidth',2,'DisplayName','Nominal'); drawnow;
+
+% GBEES
+NM = 2; 
+p.color = "cyan"; p.alpha = [0.3, 0.5, 0.7]; 
+P_DIR = "./results/c";
+
+count = 1;
+for nm=0:NM-1
+
+    P_DIR_SUB = P_DIR + "/P" + num2str(nm); 
+    FILE_LIST = dir(fullfile(P_DIR_SUB, '*.txt'));  % List only .txt files
+    num_files = numel(FILE_LIST);
+
+    for i=[0,1,num_files - 1]
+        P_FILE = P_DIR_SUB + "/pdf_" + num2str(i) + ".txt";
+
+        [x_gbees, P_gbees, n_gbees, t_gbees(count)] = parse_nongaussian_txt(P_FILE);
+
+        xest_gbees{count} = zeros(size(x_gbees(1,:)));
+        for j=1:n_gbees
+            xest_gbees{count} = xest_gbees{count}+x_gbees(j,:).*P_gbees(j);
+        end
+
+        if nm == 0
+            nexttile(1); 
+            plot_nongaussian_surface(x_gbees,P_gbees,[normpdf(1)/normpdf(0), normpdf(2)/normpdf(0), normpdf(3)/normpdf(0)],p);
+            if i == num_files-1
+                nexttile(2); 
+                plot_nongaussian_surface(x_gbees,P_gbees,[normpdf(1)/normpdf(0), normpdf(2)/normpdf(0), normpdf(3)/normpdf(0)],p);
+            end
+        elseif nm == 1
+            nexttile(2);  
+            plot_nongaussian_surface(x_gbees,P_gbees,[normpdf(1)/normpdf(0), normpdf(2)/normpdf(0), normpdf(3)/normpdf(0)], p);
+            if i == 0
+                nexttile(1); 
+                plot_nongaussian_surface(x_gbees,P_gbees,[normpdf(1)/normpdf(0), normpdf(2)/normpdf(0), normpdf(3)/normpdf(0)],p);
+            end
+        end
+        drawnow; 
+
+        count = count + 1;
+    end
+    p.color = "magenta"; 
+end
+
+clear L; clear LH; 
+LH(1) = fill(nan, nan, nan, 'FaceAlpha', 0.7, 'FaceColor', 'cyan', 'EdgeColor', 'none');
+L{1} = "$p(\mathbf{x}, t = [0,1^{\pm}])\,\,\,$";
+LH(2) = fill(nan, nan, nan, 'FaceAlpha', 0.7, 'FaceColor', 'magenta', 'EdgeColor', 'none');
+L{2} = "$p(\mathbf{x}, t = [1^{\pm},2])\,\,\,$";
+leg = legend(LH, L, 'Orientation', 'Horizontal', 'FontSize', 18, 'FontName', 'times', 'Interpreter', 'latex');
+leg.Layout.Tile = 'south';
+drawnow; 
+%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                              FUNCTIONS                                  %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function f=Aizawa(t, x, coef)   
+    f = [(x(3) - coef(2)) * x(1) - coef(4) * x(2); 
+         coef(4) * x(1) + (x(3) - coef(2)) * x(2); 
+         coef(3) + coef(1) * x(3) - (x(3)^3/3) - x(1)^2 + coef(6) * x(3) * x(1)^3];
+end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function initialize_figures()
+
+    f1 = figure(1); clf; hold on; f1.Position = [150 200 1200 475];
+    tiledlayout(1, 2, 'TileSpacing','compact');
+
+    nexttile(1); hold on; axis equal;
+    view(-109,14); lighting phong; light('Position',[-1 0 0]); 
+    set(gca, 'FontName' , 'Times', 'FontSize', 14);
+    xlabel("$x_1$", 'FontSize', 18, 'FontName', 'Times', 'Interpreter', 'latex');
+    ylabel("$x_2$", 'FontSize', 18, 'FontName', 'Times', 'Interpreter', 'latex');
+    zlabel("$x_3$", 'FontSize', 18, 'FontName', 'Times', 'Interpreter', 'latex');
+    set(get(gca,'ZLabel'), 'Rotation', 0);
+    % xlim([-20 20])
+    % xticks([-20 -10 0 10 20])
+    % xticklabels({'-20','-10','0','10','20'})
+    % ylim([-30 30])
+    % yticks([-30 -20 -10 0 10 20 30])
+    % yticklabels({'-30','-20','-10','0','10', '20', '30'})
+    % zlim([-30 30])
+    % zticks([-30 -20 -10 0 10 20 30])
+    % zticklabels({'-30','-20','-10','0','10', '20', '30'})
+    
+    nexttile(2); hold on; axis equal;
+    view(-109,14); lighting phong; light('Position',[-1 0 0]);
+    set(gca, 'FontName' , 'Times', 'FontSize', 14);
+    xlabel("$x_1$", 'FontSize', 18, 'FontName', 'Times', 'Interpreter', 'latex');
+    ylabel("$x_2$", 'FontSize', 18, 'FontName', 'Times', 'Interpreter', 'latex');
+    zlabel("$x_3$", 'FontSize', 18, 'FontName', 'Times', 'Interpreter', 'latex');
+    set(get(gca,'ZLabel'), 'Rotation', 0);
+    % xlim([-20 20])
+    % xticks([-20 -10 0 10 20])
+    % xticklabels({'-20','-10','0','10','20'})
+    % ylim([-30 30])
+    % yticks([-30 -20 -10 0 10 20 30])
+    % yticklabels({'-30','-20','-10','0','10', '20', '30'})
+    % zlim([-30 30])
+    % zticks([-30 -20 -10 0 10 20 30])
+    % zticklabels({'-30','-20','-10','0','10', '20', '30'})
+end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function [x, P, n, t] = parse_nongaussian_txt(filename)
+    fileID = fopen(filename, 'r'); t = str2double(fgetl(fileID));
+    
+    count = 1; 
+    while ~feof(fileID)
+        line = split(fgetl(fileID)); % Read a line as a string
+        P(count,1) = str2double(line{1});
+        x(count, :) = [str2double(line{2});str2double(line{3});str2double(line{4})];
+        count = count + 1; 
+    end
+    
+    % Close the file
+    fclose(fileID);
+    n = length(P); 
+end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
