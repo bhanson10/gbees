@@ -46,7 +46,8 @@ MEASURE = False                                           # Take discrete measur
 BOUNDS = False                                            # Add inadmissible regions to grid
 COLLISIONS = False;                                       # Track collisions
 TV = False;                                               # Time-invariant dynamics 
+BINARY = True;                                            # Binary output file
 #============================================================================================================#
 
 #================================================== GBEES ===================================================#
-gbees.run_gbees(Lorenz6D, None, None, G, M, T, P_DIR, M_DIR, NUM_DIST, NUM_MEAS, DEL_STEP, OUTPUT_FREQ, CAPACITY, DIM_f, OUTPUT, RECORD, MEASURE, BOUNDS, COLLISIONS, TV)
+gbees.run_gbees(Lorenz6D, None, None, G, M, T, P_DIR, M_DIR, NUM_DIST, NUM_MEAS, DEL_STEP, OUTPUT_FREQ, CAPACITY, DIM_f, OUTPUT, RECORD, MEASURE, BOUNDS, COLLISIONS, TV, BINARY)

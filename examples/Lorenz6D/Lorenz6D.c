@@ -44,10 +44,11 @@ int main(void){
     bool BOUNDS = false;                                      // Add inadmissible regions to grid
     bool COLLISIONS = false;                                  // Track collisions
     bool TV = false;                                          // Time-invariant dynamics 
+    bool BINARY = false;                                      // Binary output file
     //==========================================================================================================//
 
     //================================================= GBEES ==================================================//
-    run_gbees(Lorenz6D, NULL, NULL, G, M, T, P_DIR, M_DIR, NUM_DIST, NUM_MEAS, DEL_STEP, OUTPUT_FREQ, CAPACITY, DIM_f, OUTPUT, RECORD, MEASURE, BOUNDS, COLLISIONS, TV);
+    run_gbees(Lorenz6D, NULL, NULL, G, M, T, P_DIR, M_DIR, NUM_DIST, NUM_MEAS, DEL_STEP, OUTPUT_FREQ, CAPACITY, DIM_f, OUTPUT, RECORD, MEASURE, BOUNDS, COLLISIONS, TV, BINARY);
 
     return 0;
 }

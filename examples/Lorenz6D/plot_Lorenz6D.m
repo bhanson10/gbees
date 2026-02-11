@@ -4,7 +4,8 @@
 close all; clc; clear all; 
 
 %% initializing system properties
-prop.T = 1.5; prop.F = 4;
+load("colors.mat");
+prop.T = 1.3; prop.F = 4;
 ic = [prop.F + 0.5; prop.F; prop.F; prop.F; prop.F; prop.F];
 
 %% initializing figure
@@ -48,12 +49,13 @@ for nm=0:NM-1
     for i=[0,num_files - 1]
         P_FILE = P_DIR + "/mc_" + num2str(i) + ".txt";
 
-        [x_mc, P_mc, n_mc, t_mc(count)] = parse_nongaussian_txt(P_FILE);
+        [x_mc{count}, ~, ~, t_mc(count)] = parse_nongaussian_txt(P_FILE, 0);
+        x_mc_i = x_mc{count}; 
 
         nexttile(1); 
-        scatter3(x_mc(:,1), x_mc(:,2), x_mc(:,3), 10, 'filled', 'k', 'HandleVisibility', 'off', 'MarkerEdgeAlpha', alpha, 'MarkerFaceAlpha', alpha);
+        scatter3(x_mc_i(:,1), x_mc_i(:,2), x_mc_i(:,3), 10, 'filled', 'k', 'HandleVisibility', 'off', 'MarkerEdgeAlpha', alpha, 'MarkerFaceAlpha', alpha);
         nexttile(2);  
-        scatter3(x_mc(:,4), x_mc(:,5), x_mc(:,6), 10, 'filled', 'k', 'HandleVisibility', 'off', 'MarkerEdgeAlpha', alpha, 'MarkerFaceAlpha', alpha);
+        scatter3(x_mc_i(:,4), x_mc_i(:,5), x_mc_i(:,6), 10, 'filled', 'k', 'HandleVisibility', 'off', 'MarkerEdgeAlpha', alpha, 'MarkerFaceAlpha', alpha);
         drawnow;
 
         count = count + 1;
@@ -61,32 +63,28 @@ for nm=0:NM-1
 end
 
 %% GBEES
+binary = 0;
+if binary, file_str = ".bin"; else, file_str = ".txt"; end 
 NM = 1; 
-p.color = "cyan"; p.type = "grid"; 
-P_DIR = "./results/gbees/c";
+p.color = "cyan"; p.type = "grid"; p.alpha = [0.1, 0.2, 0.3]; 
+P_DIR = "./results/gbees/gpu";
 
 count = 1;
 for nm=0:NM-1
 
     P_DIR_SUB = P_DIR + "/P" + num2str(nm); 
-    FILE_LIST = dir(fullfile(P_DIR_SUB, '*.txt'));  % List only .txt files
+    FILE_LIST = dir(fullfile(P_DIR_SUB, '*' + file_str));  % List only file_str files
     num_files = numel(FILE_LIST);
 
     for i=[0:num_files - 1]
-        P_FILE = P_DIR_SUB + "/pdf_" + num2str(i) + ".txt";
+        P_FILE = P_DIR_SUB + "/pdf_" + num2str(i) + file_str;
 
-        [x_gbees, P_gbees, n_gbees, t_gbees(count)] = parse_nongaussian_txt(P_FILE);
-
-        [x_list, ~, x_idx] = unique(x_gbees(:,1:3), 'rows', 'stable');
-        Px_full = accumarray(x_idx, P_gbees, [], @sum);
-
-        [v_list, ~, v_idx] = unique(x_gbees(:,4:6), 'rows', 'stable');
-        Pv_full = accumarray(v_idx, P_gbees, [], @sum);
+        [x_gbees{count}, P_gbees{count}, ~, ~] = parse_nongaussian_txt(P_FILE, binary);
 
         nexttile(3); 
-        plot_nongaussian_surface(x_list, Px_full, 'p', p);
+        plot_nongaussian_surface(x_gbees{count}(:,1:3), 'P', P_gbees{count}, 'p', p);
         nexttile(4);  
-        plot_nongaussian_surface(v_list, Pv_full, 'p', p);
+        plot_nongaussian_surface(x_gbees{count}(:,4:6), 'P', P_gbees{count}, 'p', p);
         axis normal
         drawnow; 
 
@@ -97,28 +95,64 @@ end
 clear L; clear LH; 
 LH(1) = scatter(nan, nan, 10, 'k', 'filled');
 L{1} = "MC {      }";
-LH(2) = fill(nan, nan, nan, 'FaceAlpha', 0.7, 'FaceColor', 'cyan', 'EdgeColor', 'none');
-L{2} = "$p(\mathbf{x}, t = [0,1.3])\,\,\,$";
+LH(2) = fill(nan, nan, nan, 'FaceAlpha', 0.7, 'FaceColor', "cyan", 'EdgeColor', 'none');
+L{2} = "GBEES";
 leg = legend(LH, L, 'Orientation', 'Horizontal', 'FontSize', 18, 'FontName', 'times', 'Interpreter', 'latex');
 leg.Layout.Tile = 'south';
 drawnow; 
 
-% create video
-vw0 = [30, 10]; vw = vw0; 
-nf = 200; 
-dvw = [360 360] ./ nf; 
-frames(1) = getframe(gcf); 
-for i = 1:nf
-    vw = vw + dvw;
-    nexttile(1); view(vw(1), vw0(2)); 
-    nexttile(2); view(vw(1), vw0(2)); 
-    nexttile(3); view(vw(1), vw0(2)); 
-    nexttile(4); view(vw(1), vw0(2)); 
-    drawnow; 
-    pause(0.1); 
-    frames(i+1) = getframe(gcf); 
-end
-create_video(frames,'Lorenz96_mov.mp4', 24)
+% % create video
+% vw0 = [30, 10]; vw = vw0; 
+% nf = 200; 
+% dvw = [360 360] ./ nf; 
+% frames(1) = getframe(gcf); 
+% for i = 1:nf
+%     vw = vw + dvw;
+%     nexttile(1); view(vw(1), vw0(2)); 
+%     nexttile(2); view(vw(1), vw0(2)); 
+%     nexttile(3); view(vw(1), vw0(2)); 
+%     nexttile(4); view(vw(1), vw0(2)); 
+%     drawnow; 
+%     pause(0.1); 
+%     frames(i+1) = getframe(gcf); 
+% end
+% create_video(frames,'Lorenz96_mov.mp4', 24)
+
+% distributions
+clear p; clear L; clear LH; 
+f2 = figure(2); clf; f2.Position = [276,31,826,801]; hold on; 
+var_lbls = {"$\delta x_1$ (km)", "$\delta x_2$ (km)", "$\delta x_3$ (km)", ...
+            "$\delta x_4$ (m/s)", "$\delta x_5$ (m/s)", "$\delta x_6$ (m/s)"};
+p.color = [0.7 0.7 0.7]; p.hist = 1; p.m_alpha = 0.25; 
+plot_corner_pdf(x_mc{1} - x(1, :), 'lbls', var_lbls, 'p', p); 
+p.color = hangreen; p.type = "grid"; p.ls = "-."; isovalue = 2E-2; 
+plot_corner_pdf(x_gbees{1} - x(1, :), 'P', P_gbees{1}, 'isovalue', isovalue, 'p', p); 
+LH(1) = scatter(nan, nan, 100, 'o', 'MarkerFaceColor', [0.7 0.7 0.7], 'MarkerEdgeColor', 'none');
+L{1} = "MC";
+LH(2) = plot(nan, nan,  "Color", hangreen, "LineWidth", 2, "LineStyle", "-.", "DisplayName", "GBEES");
+L{2} = "GBEES";
+leg = legend(LH, L, "FontSize", 18, "FontName", "times", "Interpreter", "latex",...
+             "LineWidth", 1, "Orientation", "horizontal");
+leg.Layout.Tile = 'south'; 
+sgtitle("$t=0$", "FontSize", 28, "FontName", "times", "Interpreter", "latex")       
+drawnow; 
+
+clear p; clear L; clear LH; 
+f3 = figure(3); clf; f3.Position = [276,31,826,801]; hold on; 
+p.color = [0.7 0.7 0.7]; p.hist = 1; p.m_alpha = 0.25; 
+plot_corner_pdf(x_mc{2} - x(end, :), 'lbls', var_lbls, 'p', p); 
+p.color = hangreen; p.type = "grid"; p.ls = "-."; isovalue = 1E-5; 
+plot_corner_pdf(x_gbees{2} - x(end, :), 'P', P_gbees{2}, 'isovalue', isovalue, 'p', p); 
+LH(1) = scatter(nan, nan, 100, 'o', 'MarkerFaceColor', [0.7 0.7 0.7], 'MarkerEdgeColor', 'none');
+L{1} = "MC";
+LH(2) = plot(nan, nan,  "Color", hangreen, "LineWidth", 2, "LineStyle", "-.", "DisplayName", "GBEES");
+L{2} = "GBEES";
+leg = legend(LH, L, "FontSize", 18, "FontName", "times", "Interpreter", "latex",...
+             "LineWidth", 1, "Orientation", "horizontal");
+leg.Layout.Tile = 'south'; 
+ti = num2str(t_mc(end));
+sgtitle("$t=" + ti + "$", "FontSize", 28, "FontName", "times", "Interpreter", "latex")     
+drawnow;
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                              FUNCTIONS                                  %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -211,12 +245,23 @@ function initialize_figures()
     set(gca, 'FontName' , 'Times');
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function [x, P, n, t] = parse_nongaussian_txt(filename)
-    fileID = fopen(filename, 'r');
-    data = textscan(fileID, '%s', 'Delimiter', '\n'); data = data{1};
-    t = str2num(data{1}); data = data(2:end); 
-    pdf = cellfun(@(x) str2num(x), data, 'UniformOutput', false); pdf = cell2mat(pdf); 
-    P = pdf(:,1); x = pdf(:,2:end); n = size(P, 1);
-    fclose(fileID);
+function [x, P, n, t] = parse_nongaussian_txt(filename, binary)
+    if binary
+        fid = fopen(filename, 'rb');
+        assert(fid ~= -1, 'Could not open file.');
+        t = fread(fid, 1, 'double');
+        n = fread(fid, 1, 'uint32');
+        raw = fread(fid, [7, n], 'double');
+        P = raw(1,:)';
+        x = raw(2:end,:)';
+        fclose(fid);
+    else
+        fileID = fopen(filename, 'r');
+        data = textscan(fileID, '%s', 'Delimiter', '\n'); data = data{1};
+        t = str2num(data{1}); data = data(2:end); 
+        pdf = cellfun(@(x) str2num(x), data, 'UniformOutput', false); pdf = cell2mat(pdf); 
+        P = pdf(:,1); x = pdf(:,2:end); n = size(P, 1);
+        fclose(fileID);
+    end
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

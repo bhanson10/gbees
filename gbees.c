@@ -865,10 +865,15 @@ void normalize_tree(HashTable* P, Grid* G){
     return; 
 }
 
-char* concat_file(const char* str1, const char* str2, int num1, const char* str3, int num2) {
+char* concat_file(const char* str1, const char* str2, int num1, const char* str3, int num2, bool BINARY){
     int num1_len = snprintf(NULL, 0, "%d", num1);
     int num2_len = snprintf(NULL, 0, "%d", num2);
-    char* str4 = ".txt"; 
+    char* str4 = NULL; 
+    if(BINARY){
+        str4 = ".bin"; 
+    }else{  
+        str4 = ".txt"; 
+    }
     size_t total_len = strlen(str1) + strlen(str2) + num1_len + strlen(str3) + num2_len + strlen(str4) + 1; 
     char* result = (char*)malloc(total_len * sizeof(char));
     if (result == NULL) {
@@ -917,15 +922,62 @@ void write_cells(FILE* myfile, HashTable* P, Grid G){
     return;
 }
 
-void record_pdf(HashTable* P, const char* FILE_NAME, Grid G, const double t){
-    FILE* file = fopen(FILE_NAME, "w");
-    if (file == NULL) {
-        fprintf(stderr, "Error: could not open file %s", FILE_NAME);
-        exit(EXIT_FAILURE);
+void write_cells_b(FILE* myfile, HashTable* P, Grid G){
+    for (int idx = 0; idx < P->capacity; idx++) {
+        HashTableEntry* last = P->entries[idx];
+        while (last != NULL) {
+            if (last->prob >= G.thresh) {
+                fwrite(&last->prob, sizeof(double), 1, myfile);
+                double x[G.dim];
+                for (int i = 0; i < G.dim; i++) {
+                    x[i] = G.dx[i] * last->state[i];
+                }
+                double* xR = matrix_vector_multiply(G.dim, G.dim, G.R, x);
+                for (int i = 0; i < G.dim; i++) {
+                    xR[i] += G.center[i];
+                }
+
+                fwrite(xR, sizeof(double), G.dim, myfile);
+                free(xR);
+            }
+            last = last->next;
+        }
     }
-    fprintf(file, "%lf\n", t);
-    write_cells(file, P, G);
-    fclose(file);
+}
+
+void record_pdf(HashTable* P, const char* FILE_NAME, Grid G, const double t, bool BINARY){
+    if(BINARY){
+        FILE* file = fopen(FILE_NAME, "wb");
+        if (file == NULL) {
+            fprintf(stderr, "Error: could not open file %s", FILE_NAME);
+            exit(EXIT_FAILURE);
+        }
+
+        fwrite(&t, sizeof(double), 1, file);
+        uint32_t writeCount = 0;
+        for (int idx = 0; idx < P->capacity; idx++) {
+            HashTableEntry* last = P->entries[idx];
+            while (last != NULL) {
+                if (last->prob >= G.thresh) {
+                    writeCount++;
+                }
+                last = last->next;
+            }
+        }
+        fwrite(&writeCount, sizeof(uint32_t), 1, file);
+        write_cells_b(file, P, G);
+        fclose(file);
+    }else{
+        FILE* file = fopen(FILE_NAME, "w");
+        if (file == NULL) {
+            fprintf(stderr, "Error: could not open file %s", FILE_NAME);
+            exit(EXIT_FAILURE);
+        }
+        fprintf(file, "%lf\n", t);
+        write_cells(file, P, G);
+        fclose(file);
+    }
+
     return; 
 }
 
@@ -1369,31 +1421,51 @@ void meas_up_recursive(void (*h)(double*, double*, double, double*), HashTable* 
 }
 
 
-void record_collisions(HashTable* P, const char* FILE_NAME){
-    FILE* myfile = fopen(FILE_NAME, "w");
-    if (myfile == NULL) {
-        fprintf(stderr, "Error: could not open file %s", FILE_NAME);
-        exit(EXIT_FAILURE);
-    }
-
-    for(int idx = 0; idx < P->capacity; idx++){
-        HashTableEntry* head = P->entries[idx];
-        int entry_count = 0; 
-        if(head != NULL){
-            HashTableEntry* last = head;
-            while(last != NULL){
-                entry_count += 1; 
-                last = last->next; 
-            }
+void record_collisions(HashTable* P, const char* FILE_NAME, bool BINARY){
+    if(BINARY){
+        FILE* myfile = fopen(FILE_NAME, "wb");
+        if (myfile == NULL) {
+            fprintf(stderr, "Error: could not open file %s", FILE_NAME);
+            exit(EXIT_FAILURE);
         }
-        fprintf(myfile, "%d\n", entry_count);
-    }
+        uint32_t capacity = (uint32_t)P->capacity;
+        fwrite(&capacity, sizeof(uint32_t), 1, myfile);
+        for (uint32_t idx = 0; idx < capacity; idx++) {
+            HashTableEntry* last = P->entries[idx];
+            uint32_t entry_count = 0;
+            while (last != NULL) {
+                entry_count++;
+                last = last->next;
+            }
+            fwrite(&entry_count, sizeof(uint32_t), 1, myfile);
+        }
+        fclose(myfile);
+    }else{
+        FILE* myfile = fopen(FILE_NAME, "w");
+        if (myfile == NULL) {
+            fprintf(stderr, "Error: could not open file %s", FILE_NAME);
+            exit(EXIT_FAILURE);
+        }
 
-    fclose(myfile);
+        for(int idx = 0; idx < P->capacity; idx++){
+            HashTableEntry* head = P->entries[idx];
+            int entry_count = 0; 
+            if(head != NULL){
+                HashTableEntry* last = head;
+                while(last != NULL){
+                    entry_count += 1; 
+                    last = last->next; 
+                }
+            }
+            fprintf(myfile, "%d\n", entry_count);
+        }
+
+        fclose(myfile);
+    }
     return;
 }
 
-void run_gbees(void (*f)(double*, double*, double, double*), void (*h)(double*, double*, double, double*), double (*BOUND_f)(double*, double*), Grid G, Meas M, Traj T, char* P_DIR, char* M_DIR, int NUM_DIST, int NUM_MEAS, int DEL_STEP, int OUTPUT_FREQ, int CAPACITY, int DIM_h, bool OUTPUT, bool RECORD, bool MEASURE, bool BOUNDS, bool COLLISIONS, bool TV){
+void run_gbees(void (*f)(double*, double*, double, double*), void (*h)(double*, double*, double, double*), double (*BOUND_f)(double*, double*), Grid G, Meas M, Traj T, char* P_DIR, char* M_DIR, int NUM_DIST, int NUM_MEAS, int DEL_STEP, int OUTPUT_FREQ, int CAPACITY, int DIM_h, bool OUTPUT, bool RECORD, bool MEASURE, bool BOUNDS, bool COLLISIONS, bool TV, bool BINARY){
     char* P_PATH; char* C_PATH; 
     double RECORD_TIME;      
 
@@ -1411,8 +1483,8 @@ void run_gbees(void (*f)(double*, double*, double, double*), void (*h)(double*, 
     for(int nm = 0; nm < NUM_MEAS; nm++){
         printf("Timestep: %d-0, Program time: %f s, Sim. time: %f", nm, ((double)(clock()-start))/CLOCKS_PER_SEC, G.t); 
         printf(" TU, Active/Total Cells: %zu/%zu\n", P->a_count, P->tot_count); 
-        if(RECORD){P_PATH = concat_file(P_DIR, "/P", nm, "/pdf_", 0); record_pdf(P, P_PATH, G, G.t); free(P_PATH);};
-        if(COLLISIONS){C_PATH = concat_file(P_DIR, "/C", nm, "/c_", 0); record_collisions(P, C_PATH); free(C_PATH);}
+        if(RECORD){P_PATH = concat_file(P_DIR, "/P", nm, "/pdf_", 0, BINARY); record_pdf(P, P_PATH, G, G.t, BINARY); free(P_PATH);};
+        if(COLLISIONS){C_PATH = concat_file(P_DIR, "/C", nm, "/c_", 0, BINARY); record_collisions(P, C_PATH, BINARY); free(C_PATH);}
 
         double mt = 0; int record_count = 1; int step_count = 1; double rt; 
         while(fabs(mt - M.T) > TOL) { // time between discrete measurements
@@ -1438,7 +1510,7 @@ void run_gbees(void (*f)(double*, double*, double, double*), void (*h)(double*, 
                     printf(" TU, Active/Total Cells: %zu/%zu\n", P->a_count, P->tot_count); 
                 }
 
-                if(COLLISIONS){C_PATH = concat_file(P_DIR, "/C", nm, "/c_", step_count); record_collisions(P, C_PATH); free(C_PATH);}
+                if(COLLISIONS){C_PATH = concat_file(P_DIR, "/C", nm, "/c_", step_count, BINARY); record_collisions(P, C_PATH, BINARY); free(C_PATH);}
 
                 step_count += 1; G.dt = DBL_MAX;
             }
@@ -1449,15 +1521,15 @@ void run_gbees(void (*f)(double*, double*, double, double*), void (*h)(double*, 
             }
             
             if (RECORD) { // record PDF
-                P_PATH = concat_file(P_DIR, "/P", nm, "/pdf_", record_count); 
-                record_pdf(P, P_PATH, G, G.t);
+                P_PATH = concat_file(P_DIR, "/P", nm, "/pdf_", record_count, BINARY); 
+                record_pdf(P, P_PATH, G, G.t, BINARY);
                 record_count += 1;
                 free(P_PATH);
             }
 
             if (COLLISIONS) { // record collisions
-                C_PATH = concat_file(P_DIR, "/C", nm, "/c_", record_count); 
-                record_collisions(P, C_PATH);
+                C_PATH = concat_file(P_DIR, "/C", nm, "/c_", record_count, BINARY); 
+                record_collisions(P, C_PATH, BINARY);
                 record_count += 1;
                 free(C_PATH);
             }

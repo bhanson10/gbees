@@ -46,6 +46,8 @@ ylim([-0.25, 0.25]);
 drawnow;
 
 %% GBEES
+binary = 0;
+if binary, file_str = ".bin"; else, file_str = ".txt"; end 
 NM = 4; 
 
 C = [238, 102, 119;  % Red
@@ -62,7 +64,7 @@ count = 1;
 for nm=0:NM-1
     p.color = C(nm + 1, :);
     P_DIR_SUB = P_DIR + "/P" + num2str(nm); 
-    FILE_LIST = dir(fullfile(P_DIR_SUB, '*.txt'));  % List only .txt files
+    FILE_LIST = dir(fullfile(P_DIR_SUB, '*' + file_str));  % List only file_str files
     num_files = numel(FILE_LIST);
     
     if mod(nm, 2) == 0 % alternate between blue and red isocurves
@@ -72,9 +74,9 @@ for nm=0:NM-1
     end
 
     for i=set
-        P_FILE = P_DIR_SUB + "/pdf_" + num2str(i) + ".txt";
+        P_FILE = P_DIR_SUB + "/pdf_" + num2str(i) + file_str;
 
-        [x_gbees, P_gbees, ~, ~] = parse_nongaussian_txt(P_FILE, prop);
+        [x_gbees, P_gbees, ~, ~] = parse_nongaussian_txt(P_FILE, binary, prop);
         
         [x_list, ~, x_idx] = unique(x_gbees(:,1:2), 'rows', 'stable');
         Px_full = accumarray(x_idx, P_gbees, [], @sum);
@@ -94,7 +96,7 @@ end
 
 P_FILE = P_DIR + "/P0/pdf_0.txt";
 p.color = C(1, :);
-[x_gbees, P_gbees, ~, ~] = parse_nongaussian_txt(P_FILE, prop);
+[x_gbees, P_gbees, ~, ~] = parse_nongaussian_txt(P_FILE, binary, prop);
 nexttile(1); 
 plot_nongaussian_surface(x_gbees(:,1:2),P_gbees,[normpdf(1)/normpdf(0), normpdf(2)/normpdf(0), normpdf(3)/normpdf(0)],p);
 nexttile(2); 
@@ -123,13 +125,24 @@ function x1 = PCR3BP(t, x, prop)
     x1 = [x(3); x(4); 2*x(4)+x(1)-(prop.mu*(x(1)-1+prop.mu)/(((x(1)-1+prop.mu)^2+x(2)^2)^(1.5)))-((1-prop.mu)*(x(1)+prop.mu)/(((x(1)+prop.mu)^2+x(2)^2)^(1.5))); -2*x(3)+x(2)-(prop.mu*x(2)/(((x(1)-1+prop.mu)^2+x(2)^2)^(1.5)))-((1-prop.mu)*x(2)/(((x(1)+prop.mu)^2+x(2)^2)^(1.5)))];
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function [x, P, n, t] = parse_nongaussian_txt(filename, prop)
-    fileID = fopen(filename, 'r'); t = str2double(fgetl(fileID));
-    fileID = fopen(filename, 'r');
-    data = textscan(fileID, '%s', 'Delimiter', '\n'); data = data{1};
-    t = str2num(data{1}); data = data(2:end); 
-    pdf = cellfun(@(x) str2num(x), data, 'UniformOutput', false); pdf = cell2mat(pdf); 
-    P = pdf(:,1); x = pdf(:,2:end).*prop.U; n = size(P, 1);
-    fclose(fileID);
+function [x, P, n, t] = parse_nongaussian_txt(filename, binary, prop)
+    if binary
+        fid = fopen(filename, 'rb');
+        assert(fid ~= -1, 'Could not open file.');
+        t = fread(fid, 1, 'double');
+        n = fread(fid, 1, 'uint32');
+        raw = fread(fid, [7, n], 'double');
+        P = raw(1,:)';
+        x = raw(2:end,:)'.*prop.U;
+        fclose(fid);
+    else
+        fileID = fopen(filename, 'r'); t = str2double(fgetl(fileID));
+        fileID = fopen(filename, 'r');
+        data = textscan(fileID, '%s', 'Delimiter', '\n'); data = data{1};
+        t = str2num(data{1}); data = data(2:end); 
+        pdf = cellfun(@(x) str2num(x), data, 'UniformOutput', false); pdf = cell2mat(pdf); 
+        P = pdf(:,1); x = pdf(:,2:end).*prop.U; n = size(P, 1);
+        fclose(fileID);
+    end
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

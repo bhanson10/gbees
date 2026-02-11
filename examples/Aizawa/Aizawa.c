@@ -29,11 +29,8 @@ int main(void){
     //========================================== Read in user inputs ===========================================//
     printf("Reading in user inputs...\n\n");
 
-    double dx[DIM_f];                              // Grid width, default is half of the std. dev. from the initial measurement 
-    for(int i = 0; i < DIM_f; i ++){
-        dx[i] = pow(M.cov[i][i],0.5)/2;
-    }
-    Grid G = Grid_create(DIM_f, 1E-6, M.mean, dx); // Inputs: (dimension, probability threshold, center, grid width)       
+    double factor[DIM_f] = {1.0, 1.0, 1.0};
+    Grid G = Grid_create(DIM_f, 0.0, 1E-6, M, factor, false); // Inputs: (dimension, initial time, probability threshold, measurement, grid width factor, rotate grid)       
 
     double coef[] = {0.95, 0.7, 0.6, 3.5, 0.25, 0.1}; // Aizawa trajectory attributes (a, b, c, d, e, f)
     Traj T = Traj_create(6, coef);                    // Inputs: (# of coefficients, coefficients)
@@ -49,10 +46,11 @@ int main(void){
     bool BOUNDS = false;                           // Add inadmissible regions to grid
     bool COLLISIONS = false;                       // Track collisions
     bool TV = false;                               // Time-invariant dynamics 
+    bool BINARY = false;                           // Binary output file
     //==========================================================================================================//
 
     //================================================= GBEES ==================================================//
-    run_gbees(Aizawa, z, NULL, G, M, T, P_DIR, M_DIR, NUM_DIST, NUM_MEAS, DEL_STEP, OUTPUT_FREQ, CAPACITY, DIM_h, OUTPUT, RECORD, MEASURE, BOUNDS, COLLISIONS, TV);
-
+    run_gbees(Aizawa, z, NULL, G, M, T, P_DIR, M_DIR, NUM_DIST, NUM_MEAS, DEL_STEP, OUTPUT_FREQ, CAPACITY, DIM_h, OUTPUT, RECORD, MEASURE, BOUNDS, COLLISIONS, TV, BINARY);
+    
     return 0;
 }

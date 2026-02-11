@@ -26,6 +26,8 @@ nexttile(2);
 plot3(x(t > 1,1),x(t > 1,2),x(t > 1,3),'k-','linewidth',2,'DisplayName','Nominal'); drawnow;
 
 %% GBEES
+binary = 0;
+if binary, file_str = ".bin"; else, file_str = ".txt"; end 
 NM = 2; 
 p.color = "cyan"; p.type = "grid"; 
 P_DIR = "./results/<language>";
@@ -34,13 +36,13 @@ count = 1;
 for nm=0:NM-1
 
     P_DIR_SUB = P_DIR + "/P" + num2str(nm); 
-    FILE_LIST = dir(fullfile(P_DIR_SUB, '*.txt'));  % List only .txt files
+    FILE_LIST = dir(fullfile(P_DIR_SUB, '*' + file_str));  % List only file_str files
     num_files = numel(FILE_LIST);
 
     for i=[0:num_files - 1]
-        P_FILE = P_DIR_SUB + "/pdf_" + num2str(i) + ".txt";
+        P_FILE = P_DIR_SUB + "/pdf_" + num2str(i) + file_str;
 
-        [x_gbees, P_gbees, n_gbees, t_gbees(count)] = parse_nongaussian_txt(P_FILE);
+        [x_gbees, P_gbees, n_gbees, t_gbees(count)] = parse_nongaussian_txt(P_FILE, binary);
 
         xest_gbees{count} = zeros(size(x_gbees(1,:)));
         for j=1:n_gbees
@@ -49,17 +51,17 @@ for nm=0:NM-1
         
         if nm == 0
             nexttile(1); 
-            plot_nongaussian_surface(x_gbees, P_gbees, 'p', p); 
+            plot_nongaussian_surface(x_gbees, 'P', P_gbees, 'p', p); 
             if i == num_files-1
                 nexttile(2); 
-                plot_nongaussian_surface(x_gbees, P_gbees, 'p', p); 
+                plot_nongaussian_surface(x_gbees, 'P', P_gbees, 'p', p); 
             end
         elseif nm == 1
             nexttile(2);  
-            plot_nongaussian_surface(x_gbees, P_gbees, 'p', p); 
+            plot_nongaussian_surface(x_gbees, 'P', P_gbees, 'p', p); 
             if i == 0
                 nexttile(1); 
-                plot_nongaussian_surface(x_gbees, P_gbees, 'p', p); 
+                plot_nongaussian_surface(x_gbees, 'P', P_gbees, 'p', p); 
             end
         end
         drawnow; 
@@ -124,12 +126,23 @@ function initialize_figures()
     zticklabels({'-30','-20','-10','0','10', '20', '30'})
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function [x, P, n, t] = parse_nongaussian_txt(filename)
-    fileID = fopen(filename, 'r');
-    data = textscan(fileID, '%s', 'Delimiter', '\n'); data = data{1};
-    t = str2num(data{1}); data = data(2:end); 
-    pdf = cellfun(@(x) str2num(x), data, 'UniformOutput', false); pdf = cell2mat(pdf); 
-    P = pdf(:,1); x = pdf(:,2:end); n = size(P, 1);
-    fclose(fileID);
+function [x, P, n, t] = parse_nongaussian_txt(filename, binary)
+    if binary
+        fid = fopen(filename, 'rb');
+        assert(fid ~= -1, 'Could not open file.');
+        t = fread(fid, 1, 'double');
+        n = fread(fid, 1, 'uint32');
+        raw = fread(fid, [4, n], 'double');
+        P = raw(1,:)';
+        x = raw(2:end,:)';
+        fclose(fid);
+    else
+        fileID = fopen(filename, 'r');
+        data = textscan(fileID, '%s', 'Delimiter', '\n'); data = data{1};
+        t = str2num(data{1}); data = data(2:end); 
+        pdf = cellfun(@(x) str2num(x), data, 'UniformOutput', false); pdf = cell2mat(pdf); 
+        P = pdf(:,1); x = pdf(:,2:end); n = size(P, 1);
+        fclose(fileID);
+    end
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

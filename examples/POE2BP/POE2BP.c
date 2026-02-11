@@ -23,7 +23,7 @@ int main(void){
     //========================================== Read in user inputs ===========================================//
     printf("Reading in user inputs...\n\n");
 
-    double factor[DIM_f] = {4.0, 2.5};
+    double factor[DIM_f] = {4.0, 5.0 / 2.0};
     Grid G = Grid_create(DIM_f, 0.0, 1E-9, M, factor, false); // Inputs: (dimension, initial time, probability threshold, measure, grid width factor, rotate grid)       
 
     double coef[] = {19.910350621818949};                     // POE2BP trajectory attributes (mu)
@@ -40,10 +40,11 @@ int main(void){
     bool BOUNDS = false;                                      // Add inadmissible regions to grid
     bool COLLISIONS = false;                                  // Track collisions
     bool TV = false;                                          // Time-invariant dynamics 
+    bool BINARY = false;                                      // Binary output file
     //==========================================================================================================//
 
     //================================================= GBEES ==================================================//
-    run_gbees(POE2BP, NULL, NULL, G, M, T, P_DIR, M_DIR, NUM_DIST, NUM_MEAS, DEL_STEP, OUTPUT_FREQ, CAPACITY, DIM_f, OUTPUT, RECORD, MEASURE, BOUNDS, COLLISIONS, TV);
+    run_gbees(POE2BP, NULL, NULL, G, M, T, P_DIR, M_DIR, NUM_DIST, NUM_MEAS, DEL_STEP, OUTPUT_FREQ, CAPACITY, DIM_f, OUTPUT, RECORD, MEASURE, BOUNDS, COLLISIONS, TV, BINARY);
 
     return 0;
 }
