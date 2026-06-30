@@ -26,11 +26,12 @@ nexttile(2);
 plot3(x(t > 1,1),x(t > 1,2),x(t > 1,3),'k-','linewidth',2,'DisplayName','Nominal'); drawnow;
 
 %% GBEES
-binary = 0;
+binary = 1;
 if binary, file_str = ".bin"; else, file_str = ".txt"; end 
+precision = "float"; % double or float
 NM = 2; 
 p.color = "cyan"; p.type = "grid"; 
-P_DIR = "./results/<language>";
+P_DIR = "./results/cuda";
 
 count = 1;
 for nm=0:NM-1
@@ -42,7 +43,9 @@ for nm=0:NM-1
     for i=[0:num_files - 1]
         P_FILE = P_DIR_SUB + "/pdf_" + num2str(i) + file_str;
 
-        [x_gbees, P_gbees, n_gbees, t_gbees(count)] = parse_nongaussian_txt(P_FILE, binary);
+        [x_gbees, P_gbees, n_gbees, t_gbees(count)] = parse_nongaussian_txt(P_FILE, binary, precision);
+
+        size(x_gbees),
 
         xest_gbees{count} = zeros(size(x_gbees(1,:)));
         for j=1:n_gbees
@@ -126,13 +129,13 @@ function initialize_figures()
     zticklabels({'-30','-20','-10','0','10', '20', '30'})
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function [x, P, n, t] = parse_nongaussian_txt(filename, binary)
+function [x, P, n, t] = parse_nongaussian_txt(filename, binary, precision)
     if binary
         fid = fopen(filename, 'rb');
         assert(fid ~= -1, 'Could not open file.');
-        t = fread(fid, 1, 'double');
+        t = fread(fid, 1, precision);
         n = fread(fid, 1, 'uint32');
-        raw = fread(fid, [4, n], 'double');
+        raw = fread(fid, [4, n], precision);
         P = raw(1,:)';
         x = raw(2:end,:)';
         fclose(fid);
